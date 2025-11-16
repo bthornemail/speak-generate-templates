@@ -95,18 +95,20 @@ export default function SpeechInterface({ onCommand, complex, dag }) {
 
     // Template generation command
     if (lower.includes('generate') && lower.includes('template')) {
-      try {
-        const template = templateGeneratorRef.current.generateFromCommand(text);
-        setGeneratedTemplate(template);
-        setShowTemplate(true);
-        const yaml = template.toYAML();
-        addLog(`✅ Template generated: ${template.frontmatter.id}`);
-        addLog(`📄 YAML:\n${yaml.substring(0, 200)}...`);
-        speak('Template generated successfully');
-      } catch (error) {
-        addLog(`❌ Error: ${error.message}`);
-        speak(`Error: ${error.message}`);
-      }
+      (async () => {
+        try {
+          const template = await templateGeneratorRef.current.generateFromCommand(text);
+          setGeneratedTemplate(template);
+          setShowTemplate(true);
+          const yaml = template.toYAML();
+          addLog(`✅ Template generated: ${template.frontmatter.id}`);
+          addLog(`📄 YAML:\n${yaml.substring(0, 200)}...`);
+          speak('Template generated successfully');
+        } catch (error) {
+          addLog(`❌ Error: ${error.message}`);
+          speak(`Error: ${error.message}`);
+        }
+      })();
     }
     // MD parsing command
     else if (lower.includes('parse') && (lower.includes('md') || lower.includes('markdown'))) {
@@ -136,7 +138,7 @@ export default function SpeechInterface({ onCommand, complex, dag }) {
     }
   };
 
-  const handleParseMd = () => {
+  const handleParseMd = async () => {
     const mdContent = prompt('Paste Markdown content with frontmatter:');
     if (!mdContent) {
       addLog('❌ No content provided');
@@ -144,13 +146,16 @@ export default function SpeechInterface({ onCommand, complex, dag }) {
     }
 
     try {
-      const parsed = parseAndValidate(mdContent);
+      const parsed = await parseAndValidate(mdContent);
       setParsedContent(parsed);
       setShowParsed(true);
       addLog(`✅ Parsed template: ${parsed.id}`);
       addLog(`📋 Type: ${parsed.type}, Dimension: ${parsed.dimension}`);
       if (parsed.validation.warnings.length > 0) {
         addLog(`⚠️ Warnings: ${parsed.validation.warnings.join(', ')}`);
+      }
+      if (parsed.ast) {
+        addLog(`🌳 AST built successfully`);
       }
       speak('Markdown parsed successfully');
     } catch (error) {

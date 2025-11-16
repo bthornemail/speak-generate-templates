@@ -3,9 +3,12 @@
  * 
  * Generates YAML templates from voice commands
  * Supports template generation for macros, directives, and full CANVASL templates
+ * Enhanced with NLP grammar patterns and semantic analysis
  */
 
 import * as yaml from 'js-yaml';
+import { GrammarExtractor } from '../nlp/grammar-extractor.js';
+import { SemanticAnalyzer } from '../nlp/semantic-analyzer.js';
 
 /**
  * CANVASL Template structure matching the specification
@@ -45,6 +48,8 @@ export class CanvaslTemplate {
  */
 export class TemplateGenerator {
   constructor() {
+    this.grammarExtractor = new GrammarExtractor();
+    this.semanticAnalyzer = new SemanticAnalyzer();
     this.apiMappings = {
       'location': { api: 'geolocation', method: 'getCurrentPosition', params: { enableHighAccuracy: true } },
       'notify': { api: 'notifications', method: 'showNotification', params: { title: 'CANVASL Alert', body: 'Voice command executed' } },
@@ -58,11 +63,12 @@ export class TemplateGenerator {
 
   /**
    * Generate template from voice command
+   * Enhanced with NLP and semantic analysis
    * 
    * @param {string} transcript - Voice transcript (e.g., "generate template for location macro")
-   * @returns {CanvaslTemplate} Generated template
+   * @returns {Promise<CanvaslTemplate>} Generated template
    */
-  generateFromCommand(transcript) {
+  async generateFromCommand(transcript) {
     const lower = transcript.toLowerCase().trim();
     
     // Parse command pattern: "generate template for [keywords...]"
@@ -72,41 +78,48 @@ export class TemplateGenerator {
     }
 
     const keywordsStr = match[1];
-    const keywords = this.extractKeywords(keywordsStr);
+    const keywords = await this.extractKeywords(keywordsStr);
     
     if (keywords.length === 0) {
       throw new Error('No keywords found. Specify keywords like: "location", "notify", "save"');
     }
 
-    // Generate template
-    return this.generateTemplate(keywords);
+    // Generate template with enhanced keyword extraction
+    return await this.generateTemplate(keywords);
   }
 
   /**
    * Extract keywords from transcript
+   * Enhanced with semantic analysis
    * 
    * @param {string} text - Text containing keywords
-   * @returns {string[]} Array of keywords
+   * @returns {Promise<string[]>} Array of keywords
    */
-  extractKeywords(text) {
-    // Split by common separators and filter out common words
-    const stopWords = new Set(['for', 'and', 'or', 'the', 'a', 'an', 'with', 'using']);
-    const words = text
-      .toLowerCase()
-      .split(/[\s,]+/)
-      .map(w => w.trim())
-      .filter(w => w.length > 0 && !stopWords.has(w));
+  async extractKeywords(text) {
+    // Use grammar extractor for better keyword extraction
+    const grammar = this.grammarExtractor.extractGrammar(text);
+    const extractedKeywords = grammar.keywords.map(k => k.pattern);
     
-    return [...new Set(words)]; // Remove duplicates
+    // Also use semantic analyzer to expand keywords
+    const semanticKeywords = await this.semanticAnalyzer.mapIntentToCanvasl(text);
+    
+    // Combine and deduplicate
+    const allKeywords = [
+      ...extractedKeywords,
+      ...semanticKeywords.canvaslKeywords
+    ];
+    
+    return [...new Set(allKeywords)]; // Remove duplicates
   }
 
   /**
    * Generate CANVASL template from keywords
+   * Enhanced with grammar patterns
    * 
    * @param {string[]} keywords - Array of keywords
-   * @returns {CanvaslTemplate} Generated template
+   * @returns {Promise<CanvaslTemplate>} Generated template
    */
-  generateTemplate(keywords) {
+  async generateTemplate(keywords) {
     const templateId = `template-${Date.now()}`;
     const edges = keywords.map(k => `e_${k}`);
     

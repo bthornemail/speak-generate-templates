@@ -1,9 +1,28 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
-    "./custom-instructions.md"
+    "./CLAUDE.md",
+    "./.cursorrules"
   ],
   "mcp": {
+    "opencode-mcp-server": {
+      "type": "local",
+      "command": [
+        "node",
+        "mcp-server/opencode-mcp-server.js"
+      ],
+      "enabled": true,
+      "environment": {}
+    },
+    "canvasl-mcp-server": {
+      "type": "local",
+      "command": [
+        "node",
+        "mcp-server/canvasl-mcp-server.js"
+      ],
+      "enabled": true,
+      "environment": {}
+    },
     "wikipedia-mcp": {
       "type": "local",
       "command": [
@@ -13,7 +32,7 @@
         "--rm",
         "mcp/wikipedia-mcp"
       ],
-      "enabled": true
+      "enabled": false
     },
     "arxiv-mcp-server": {
       "type": "local",
@@ -28,20 +47,10 @@
         "/home/main/automaton:/home/main/automaton",
         "mcp/arxiv-mcp-server"
       ],
-      "enabled": true,
+      "enabled": false,
       "environment": {
         "ARXIV_STORAGE_PATH": "/home/main/automaton/papers"
       }
-    },
-    "claude-code": {
-      "type": "local",
-      "command": [
-        "claude",
-        "mcp",
-        "server"
-      ],
-      "enabled": false,
-      "environment": {}
     }
   },
   "provider": {
@@ -81,61 +90,54 @@
     }
   },
   "agent": {
-    "automaton-interface": {
-      "description": "Primary interface for the continuous self-referencing automaton system - coordinates all operations and delegates to specialists",
+    "canvasl-main": {
+      "description": "Primary CANVASL system interface - coordinates voice interface, chain complex operations, DAG management, and storage systems",
       "mode": "primary",
       "model": "opencode/big-pickle",
       "temperature": 0.3,
-      "prompt": "{file:./.opencode/agent/automaton-interface.md}"
+      "prompt": "You are working with the CANVASL A₁₁ demonstration system - a peer-to-peer, topologically sound, self-sovereign operating system. The system implements chain complexes (C₀-C₄), homology validation (∂² = 0), voice-controlled template generation, and content-addressed node storage. Reference ./CLAUDE.md and ./docs/CANVASL-DEMONSTRATION.md for complete documentation."
     },
-    "automaton-control": {
-      "description": "Control center operator - handles execution, configuration, and running the automaton system",
+    "voice-interface": {
+      "description": "Expert for Web Speech API integration - handles voice recognition, speech synthesis, template generation from voice commands, and Markdown frontmatter parsing",
       "mode": "subagent",
       "model": "opencode/big-pickle",
       "temperature": 0.3,
-      "prompt": "{file:./.opencode/agent/automaton-control.md}"
+      "prompt": "You specialize in the voice interface system. The codebase uses Web Speech API for voice recognition and synthesis. Templates are generated from voice commands like 'generate template for location notify save'. Markdown frontmatter is parsed using js-yaml. Key files: src/canvasl/speech/, src/canvasl/SpeechInterface.jsx. Reference ./SPEECH_FEATURES.md for details."
     },
-    "automaton-analyzer": {
-      "description": "Pattern detective - analyzes Church encoding patterns, self-reference recursion, dimensional relationships, and topological structures",
+    "chain-complex": {
+      "description": "Expert for chain complex operations and homology validation - handles C₀-C₄ cells, boundary operators (∂₁-∂₄), Betti number computation, and Euler characteristic",
       "mode": "subagent",
       "model": "opencode/big-pickle",
       "temperature": 0.2,
-      "prompt": "{file:./.opencode/agent/automaton-analyzer.md}"
+      "prompt": "You specialize in algebraic topology and chain complexes. The system validates topological consistency using ∂² = 0 (boundary of boundary is zero). Key files: src/canvasl/chain/complex.js, src/canvasl/chain/homology.js. The chain complex has 5 dimensions: C₀ (vertices/keywords), C₁ (edges), C₂ (faces/documents), C₃ (volumes/interfaces), C₄ (hypervolumes/contexts)."
     },
-    "automaton-visualizer": {
-      "description": "Visual storyteller - creates diagrams, charts, and visualizations of the computational topology",
+    "dag-storage": {
+      "description": "Expert for DAG operations and storage systems - handles parent-based causality, OPFS storage, IndexedDB indexing, content addressing (CIDs), and node management",
+      "mode": "subagent",
+      "model": "opencode/big-pickle",
+      "temperature": 0.2,
+      "prompt": "You specialize in DAG structures and storage. The system uses OPFS for fast file storage and IndexedDB for queryable indexes. Nodes are content-addressed using SHA-256 CIDs. The DAG maintains causality without timestamps using parent-child relationships. Key files: src/canvasl/dag/operations.js, src/canvasl/storage/opfs.js, src/canvasl/storage/idb.js, src/canvasl/crypto/cid.js."
+    },
+    "ui-components": {
+      "description": "Expert for React UI components - handles ProjectiveCanvas visualization, AffineMarkdownEditor (CodeMirror), StarsBackground animation, and component integration",
       "mode": "subagent",
       "model": "opencode/big-pickle",
       "temperature": 0.3,
-      "prompt": "{file:./.opencode/agent/automaton-visualizer.md}"
+      "prompt": "You specialize in React UI components. The system uses CodeMirror 6 for markdown editing, Canvas API for DAG visualization, and CSS animations for the stars background. Key files: src/canvasl/CANVASL.jsx, src/canvasl/ProjectiveCanvas.jsx, src/components/AffineMarkdownEditor.jsx, src/components/StarsBackground.jsx."
     },
-    "autonomous-operations": {
-      "description": "Expert for autonomous CanvasL operations - handles self-regeneration, self-modification, goal negotiation, consensus, and autonomous evolution (RFC 2119 protocol)",
-      "mode": "subagent",
-      "model": "opencode/big-pickle",
-      "temperature": 0.3,
-      "prompt": "{file:./.opencode/agent/autonomous-operations.md}"
-    },
-    "geometric-operations": {
-      "description": "Expert for regular polyhedra geometry operations - handles BQF encoding, polyhedra transformations, computational mapping, and geometric validation",
+    "template-system": {
+      "description": "Expert for CANVASL template system - handles YAML frontmatter generation, template validation, macro definitions, and template-to-chain-complex conversion",
       "mode": "subagent",
       "model": "opencode/big-pickle",
       "temperature": 0.2,
-      "prompt": "{file:./.opencode/agent/geometric-operations.md}"
+      "prompt": "You specialize in CANVASL templates. Templates have YAML frontmatter with type, adjacency, speech config, macros, and validation rules. Templates map to C₂ cells in the chain complex. Key files: src/canvasl/speech/template-generator.js, src/canvasl/speech/frontmatter-parser.js. Reference ./docs/00-Inbox/02-templates-macros.md for template specification."
     },
-    "dimensional-guide": {
-      "description": "Expert tour guide through dimensional topology - navigates 0D-7D progression and explains dimensional relationships",
+    "mathematical-foundations": {
+      "description": "Expert for mathematical foundations - explains sheaf theory, algebraic topology, homological algebra, Church encoding, and dimensional progression (0D-7D)",
       "mode": "subagent",
       "model": "opencode/big-pickle",
       "temperature": 0.2,
-      "prompt": "{file:./.opencode/agent/dimensional-guide.md}"
-    },
-    "church-encoding-expert": {
-      "description": "Lambda calculus teacher - explains Church encoding, lambda calculus foundations, and mathematical concepts",
-      "mode": "subagent",
-      "model": "opencode/big-pickle",
-      "temperature": 0.2,
-      "prompt": "{file:./.opencode/agent/church-encoding-expert.md}"
+      "prompt": "You specialize in the mathematical foundations of CANVASL. The system is based on sheaf theory over discrete topological spaces, chain complexes with boundary operators, and homological validation. Reference ./docs/01-CanvasL-A11.md, ./docs/00-Inbox/04-affine-projective.md, and ./AGENTS.md for mathematical details."
     }
   }
 }

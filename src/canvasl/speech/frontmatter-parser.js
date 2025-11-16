@@ -2,9 +2,12 @@
  * CANVASL Frontmatter Parser
  * 
  * Parses Markdown frontmatter (YAML) and extracts CANVASL template structure
+ * Enhanced with AST validation
  */
 
 import * as yaml from 'js-yaml';
+import { ASTBuilder } from '../ast/ast-builder.js';
+import { ASTValidator } from '../ast/ast-validator.js';
 
 /**
  * Parse Markdown frontmatter from content
@@ -165,12 +168,30 @@ export function toCanvaslStructure(parsed) {
 
 /**
  * Parse and validate MD content
+ * Enhanced with AST validation
  * 
  * @param {string} mdContent - Markdown content
- * @returns {object} Complete parsed and validated structure
+ * @returns {Promise<object>} Complete parsed and validated structure
  */
-export function parseAndValidate(mdContent) {
+export async function parseAndValidate(mdContent) {
   const parsed = parseMdFrontmatter(mdContent);
   const structure = toCanvaslStructure(parsed);
+  
+  // Add AST validation
+  try {
+    const astBuilder = new ASTBuilder();
+    const ast = await astBuilder.buildAST(mdContent);
+    const astValidator = new ASTValidator();
+    const astValidation = astValidator.validate(ast);
+    
+    // Merge AST validation results
+    structure.validation.errors.push(...astValidation.errors);
+    structure.validation.warnings.push(...astValidation.warnings);
+    structure.validation.valid = structure.validation.valid && astValidation.valid;
+    structure.ast = ast;
+  } catch (error) {
+    structure.validation.warnings.push(`AST validation error: ${error.message}`);
+  }
+  
   return structure;
 }

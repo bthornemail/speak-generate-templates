@@ -10,6 +10,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { parseMdFrontmatter, parseAndValidate } from '../canvasl/speech/frontmatter-parser.js';
+import { canvaslLanguage } from '../canvasl/lsp/canvasl-language.js';
 import './AffineMarkdownEditor.css';
 
 export default function AffineMarkdownEditor({ 
@@ -211,7 +212,10 @@ Say keywords to trigger macros: "location", "notify"
           <CodeMirror
             value={content}
             height="500px"
-            extensions={[markdown()]}
+            extensions={[
+              canvaslLanguage({ lspServerUrl: 'ws://localhost:3000/lsp' }),
+              markdown()
+            ]}
             theme={oneDark}
             onChange={(value) => setContent(value)}
             basicSetup={{

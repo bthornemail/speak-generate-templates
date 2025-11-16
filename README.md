@@ -24,6 +24,7 @@ npm run dev
 - ⭐ **Animated Background** - Beautiful stars animation
 - 🔬 **Topological Validation** - Chain complex homology checking (∂² = 0)
 - 💾 **Content-Addressed Storage** - OPFS + IndexedDB for persistent node storage
+- 🔌 **MCP Server** - Programmatic access via Model Context Protocol
 
 ## Voice Commands
 
@@ -35,7 +36,8 @@ npm run dev
 
 ## Documentation
 
-- **[CANVASL-DEMONSTRATION.md](./docs/CANVASL-DEMONSTRATION.md)** - Complete demonstration guide
+- **[CANVASL-DEMONSTRATION.md](./docs/CANVASL-DEMONSTRATION.md)** - Complete demonstration guide (Who, What, When, Where, Why, How)
+- **[MCP-SERVER.md](./docs/MCP-SERVER.md)** - MCP server documentation
 - **[SPEECH_FEATURES.md](./SPEECH_FEATURES.md)** - Voice interface documentation
 - **[docs/01-CanvasL-A11.md](./docs/01-CanvasL-A11.md)** - CANVASL specification
 
@@ -47,6 +49,7 @@ npm run dev
 - **CodeMirror 6** - Markdown editor
 - **OPFS** - Origin Private File System
 - **IndexedDB** - Indexed database storage
+- **MCP SDK** - Model Context Protocol server
 
 ## Project Structure
 
@@ -59,6 +62,13 @@ src/
 │   ├── dag/            # DAG management
 │   └── storage/        # Storage adapters
 └── App.jsx             # Main application
+
+mcp-server/
+└── canvasl-mcp-server.js  # MCP server for programmatic access
+
+docs/
+├── CANVASL-DEMONSTRATION.md  # Complete guide
+└── MCP-SERVER.md            # MCP server docs
 ```
 
 ## Browser Requirements

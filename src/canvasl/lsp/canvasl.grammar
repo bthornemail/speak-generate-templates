@@ -1,0 +1,52 @@
+@top { Template }
+
+Template { Frontmatter? Body }
+
+Frontmatter { FrontmatterDelimiter YAMLContent FrontmatterDelimiter }
+
+FrontmatterDelimiter { "---" }
+
+YAMLContent { YAMLKeyValue* }
+
+YAMLKeyValue { YAMLKey ":" YAMLValue }
+
+YAMLKey { @regexp /[a-zA-Z_][a-zA-Z0-9_.-]*/ }
+
+YAMLValue { YAMLString | YAMLNumber | YAMLBoolean | YAMLArray | YAMLObject | YAMLNull }
+
+YAMLString { @regexp /"([^"\\]|\\.)*"/ | @regexp /'([^'\\]|\\.)*'/ }
+
+YAMLNumber { @regexp /-?\d+(\.\d+)?/ }
+
+YAMLBoolean { "true" | "false" }
+
+YAMLArray { "[" YAMLValue ("," YAMLValue)* "]" }
+
+YAMLObject { "{" YAMLKeyValue ("," YAMLKeyValue)* "}" }
+
+YAMLNull { "null" }
+
+Body { MarkdownContent }
+
+MarkdownContent { MarkdownBlock* }
+
+MarkdownBlock { Header | Paragraph | List | CodeBlock }
+
+Header { @regexp /#{1,6}\s+/ @regexp /[^\n]+/ }
+
+Paragraph { @regexp /[^\n]+/ }
+
+List { ListItem+ }
+
+ListItem { @regexp /[-*+]\s+/ | @regexp /\d+\.\s+/ }
+
+CodeBlock { "```" @regexp /[a-z]*/ "\n" @regexp /[^`]+/ "```" }
+
+Macro { "keyword:" Keyword "api:" API "method:" Method }
+
+Keyword { @regexp /[a-zA-Z_][a-zA-Z0-9_]*/ }
+
+API { @regexp /[a-zA-Z_][a-zA-Z0-9_]*/ }
+
+Method { @regexp /[a-zA-Z_][a-zA-Z0-9_]*/ }
+

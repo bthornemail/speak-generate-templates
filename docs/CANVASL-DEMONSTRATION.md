@@ -15,6 +15,7 @@
 7. [Architecture Overview](#architecture-overview)
 8. [Usage Guide](#usage-guide)
 9. [Technical Details](#technical-details)
+10. [MCP Server Integration](#mcp-server-integration)
 
 ---
 
@@ -836,6 +837,60 @@ This demonstration provides a **complete, working implementation** of core CANVA
 - ✅ **Visual interface** with canvas and editor
 
 It serves as both a **proof of concept** and a **foundation** for future CANVASL development, demonstrating that the mathematical foundations are not just theoretical but **practical and implementable**.
+
+---
+
+## MCP Server Integration
+
+### Overview
+
+The CANVASL MCP Server provides programmatic access to CANVASL operations via the Model Context Protocol. AI agents can interact with the system without direct code access.
+
+### Configuration
+
+The server is configured in `opencode.jsonc`:
+
+```jsonc
+{
+  "mcp": {
+    "canvasl-mcp-server": {
+      "type": "local",
+      "command": ["node", "mcp-server/canvasl-mcp-server.js"],
+      "enabled": true
+    }
+  }
+}
+```
+
+### Available Tools
+
+The MCP server exposes 11 tools:
+
+1. **`generate_template`** - Generate CANVASL YAML templates from keywords
+2. **`parse_markdown`** - Parse and validate Markdown with frontmatter
+3. **`validate_template`** - Validate template structure
+4. **`create_chain_complex`** - Create empty chain complex
+5. **`add_cell`** - Add cells to chain complex
+6. **`compute_homology`** - Compute Betti numbers and Euler characteristic
+7. **`validate_homology`** - Validate ∂² = 0
+8. **`create_dag`** - Create empty DAG
+9. **`compute_cid`** - Compute content identifier
+10. **`read_template_file`** - Read template files
+11. **`write_template_file`** - Write template files
+
+### Usage Example
+
+```bash
+# Generate template via MCP
+{
+  "tool": "generate_template",
+  "arguments": {
+    "keywords": ["location", "notify", "save"]
+  }
+}
+```
+
+**Reference**: See `docs/MCP-SERVER.md` and `mcp-server/README.md` for complete MCP server documentation.
 
 ---
 
