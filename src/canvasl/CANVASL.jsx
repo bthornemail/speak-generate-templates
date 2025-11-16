@@ -14,6 +14,7 @@ import { registerWebAuthn } from './crypto/webauthn.js';
 import { createDAG, addNode as addDagNode } from './dag/operations.js';
 import SpeechInterface from './SpeechInterface.jsx';
 import ProjectiveCanvas from './ProjectiveCanvas.jsx';
+import AffineMarkdownEditor from '../components/AffineMarkdownEditor.jsx';
 
 export default function CANVASL() {
   const [status, setStatus] = useState('Initializing...');
@@ -28,6 +29,7 @@ export default function CANVASL() {
   const [webAuthnSupported, setWebAuthnSupported] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [showAffineEditor, setShowAffineEditor] = useState(false);
 
   // Initialize CANVASL system
   useEffect(() => {
@@ -233,45 +235,56 @@ export default function CANVASL() {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'monospace', maxWidth: '900px', margin: '0 auto' }}>
-      <h1>CANVASL A₁₁</h1>
-      <p style={{ color: '#666' }}>
+    <div style={{ 
+      padding: '20px', 
+      fontFamily: 'monospace', 
+      maxWidth: '900px', 
+      margin: '0 auto',
+      position: 'relative',
+      zIndex: 1,
+      background: 'rgba(20, 20, 20, 0.95)',
+      borderRadius: '8px',
+      backdropFilter: 'blur(10px)',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+    }}>
+      <h1 style={{ color: '#fff', textShadow: '0 0 10px rgba(100, 108, 255, 0.5)', marginBottom: '10px' }}>CANVASL A₁₁</h1>
+      <p style={{ color: '#e0e0e0', fontSize: '16px', marginBottom: '20px' }}>
         Peer-to-Peer, Topologically Sound, Self-Sovereign Operating System
       </p>
 
-      <div style={{ background: '#f5f5f5', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
-        <strong>Status:</strong> {status}
+      <div style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+        <strong style={{ color: '#fff' }}>Status:</strong> <span style={{ color: '#e0e0e0' }}>{status}</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
         <div>
-          <h3>Chain Complex</h3>
+          <h3 style={{ color: '#fff', marginBottom: '10px' }}>Chain Complex</h3>
           {complex && (
-            <div style={{ background: '#fff', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '10px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '5px', color: '#e0e0e0' }}>
               <div>C₀ (vertices): {complex.C0.length}</div>
               <div>C₁ (edges): {complex.C1.length}</div>
               <div>C₂ (faces): {complex.C2.length}</div>
               <div>C₃ (volumes): {complex.C3.length}</div>
               <div>C₄ (contexts): {complex.C4.length}</div>
-              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #eee' }}>
-                <strong>Euler χ:</strong> {euler}
+              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                <strong style={{ color: '#fff' }}>Euler χ:</strong> {euler}
               </div>
               <div>
-                <strong>Betti:</strong> [{betti.join(', ')}]
+                <strong style={{ color: '#fff' }}>Betti:</strong> [{betti.join(', ')}]
               </div>
             </div>
           )}
         </div>
 
         <div>
-          <h3>DAG & Storage</h3>
+          <h3 style={{ color: '#fff', marginBottom: '10px' }}>DAG & Storage</h3>
           {dag && (
-            <div style={{ background: '#fff', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '10px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '5px', color: '#e0e0e0' }}>
               <div>Nodes: {dag.nodes.size}</div>
               <div>Roots: {dag.roots.size}</div>
               <div>Heads: {dag.heads.size}</div>
-              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #eee' }}>
-                <strong>Storage:</strong>
+              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                <strong style={{ color: '#fff' }}>Storage:</strong>
               </div>
               <div>Used: {formatBytes(storageInfo.usage)}</div>
               <div>Quota: {formatBytes(storageInfo.quota)}</div>
@@ -281,7 +294,7 @@ export default function CANVASL() {
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <h3>Actions</h3>
+        <h3 style={{ color: '#fff', marginBottom: '10px' }}>Actions</h3>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={addTestCell} style={buttonStyle}>
             Add Test Cell
@@ -299,23 +312,23 @@ export default function CANVASL() {
       </div>
 
       <div>
-        <h3>Recent Nodes ({nodes.length})</h3>
-        <div style={{ background: '#fff', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+        <h3 style={{ color: '#fff', marginBottom: '10px' }}>Recent Nodes ({nodes.length})</h3>
+        <div style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '10px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '5px', color: '#e0e0e0' }}>
           {nodes.length === 0 ? (
-            <div style={{ color: '#999' }}>No nodes yet. Click "Create MetaLogNode" above.</div>
+            <div style={{ color: '#aaa' }}>No nodes yet. Click "Create MetaLogNode" above.</div>
           ) : (
             nodes.map((node, i) => (
               <div key={i} style={{
                 padding: '8px',
-                borderBottom: i < nodes.length - 1 ? '1px solid #eee' : 'none'
+                borderBottom: i < nodes.length - 1 ? '1px solid rgba(255, 255, 255, 0.2)' : 'none'
               }}>
-                <div style={{ fontSize: '12px', color: '#666' }}>
+                <div style={{ fontSize: '12px', color: '#ccc' }}>
                   {new Date(node.timestamp).toLocaleString()}
                 </div>
-                <div style={{ fontFamily: 'monospace', fontSize: '11px', marginTop: '4px' }}>
+                <div style={{ fontFamily: 'monospace', fontSize: '11px', marginTop: '4px', color: '#e0e0e0' }}>
                   CID: {node.cid.slice(0, 40)}...
                 </div>
-                <div style={{ fontSize: '11px', color: '#666' }}>
+                <div style={{ fontSize: '11px', color: '#ccc' }}>
                   Path: {node.path}
                 </div>
               </div>
@@ -332,21 +345,64 @@ export default function CANVASL() {
         key={forceUpdate}
       />
 
+      {/* Affine Markdown Editor View */}
+      <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h3 style={{ color: '#fff', margin: 0 }}>📝 Affine Markdown Editor</h3>
+          <button
+            onClick={() => setShowAffineEditor(!showAffineEditor)}
+            style={{
+              padding: '8px 15px',
+              background: showAffineEditor ? '#4caf50' : 'rgba(255, 255, 255, 0.1)',
+              color: '#fff',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            {showAffineEditor ? '✕ Hide Editor' : '📝 Show Editor'}
+          </button>
+        </div>
+        
+        {showAffineEditor && (
+          <AffineMarkdownEditor
+            planeName={selectedNodeId ? `Affine View - Node ${selectedNodeId.slice(0, 8)}` : 'Affine View'}
+            nodeId={selectedNodeId}
+            initialContent={selectedNodeId && nodes.find(n => n.cid === selectedNodeId)?.content 
+              ? nodes.find(n => n.cid === selectedNodeId).content 
+              : ''}
+            onSave={(content) => {
+              console.log('Saving content:', content);
+              if (selectedNodeId) {
+                setStatus(`Content saved for node ${selectedNodeId.slice(0, 8)}`);
+              } else {
+                setStatus('Content saved (create a node to associate it)');
+              }
+            }}
+            onParse={(parsed) => {
+              console.log('Parsed template:', parsed);
+              setStatus(`Template parsed: ${parsed.type} (${parsed.dimension}D)`);
+            }}
+          />
+        )}
+      </div>
+
       <SpeechInterface onCommand={handleCommand} complex={complex} dag={dag} />
 
-      <div style={{ marginTop: '30px', padding: '15px', background: '#f9f9f9', borderRadius: '5px' }}>
-        <h4>About CANVASL A₁₁</h4>
-        <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#666' }}>
+      <div style={{ marginTop: '30px', padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '5px', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+        <h4 style={{ color: '#fff', marginBottom: '10px' }}>About CANVASL A₁₁</h4>
+        <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#e0e0e0', marginBottom: '10px' }}>
           This is a live implementation of the CANVASL A₁₁ specification - a peer-to-peer operating system
           where every file is a signed, content-addressed node in a global hypergraph. The system uses:
         </p>
-        <ul style={{ fontSize: '13px', color: '#666' }}>
-          <li><strong>Chain Complexes:</strong> Algebraic topology for data structure validation</li>
-          <li><strong>Homology:</strong> Ensures ∂² = 0 (boundary of boundary is zero)</li>
-          <li><strong>Content Addressing:</strong> SHA-256 based CIDs for immutability</li>
-          <li><strong>OPFS:</strong> Origin Private File System for fast local storage</li>
-          <li><strong>WebAuthn:</strong> Biometric authentication (when available)</li>
-          <li><strong>DAG:</strong> Directed Acyclic Graph for causality without timestamps</li>
+        <ul style={{ fontSize: '13px', color: '#e0e0e0', lineHeight: '1.8' }}>
+          <li><strong style={{ color: '#fff' }}>Chain Complexes:</strong> Algebraic topology for data structure validation</li>
+          <li><strong style={{ color: '#fff' }}>Homology:</strong> Ensures ∂² = 0 (boundary of boundary is zero)</li>
+          <li><strong style={{ color: '#fff' }}>Content Addressing:</strong> SHA-256 based CIDs for immutability</li>
+          <li><strong style={{ color: '#fff' }}>OPFS:</strong> Origin Private File System for fast local storage</li>
+          <li><strong style={{ color: '#fff' }}>WebAuthn:</strong> Biometric authentication (when available)</li>
+          <li><strong style={{ color: '#fff' }}>DAG:</strong> Directed Acyclic Graph for causality without timestamps</li>
         </ul>
       </div>
     </div>

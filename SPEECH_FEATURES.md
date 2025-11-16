@@ -251,17 +251,184 @@ The speech interface improves accessibility by:
 - Keyboard-accessible text input as fallback
 - Clear command reference always visible
 
+## Template Generation and MD Parsing
+
+### New Features (2025-01-07)
+
+The speech interface now supports **YAML template generation** and **Markdown frontmatter parsing**:
+
+#### 1. Template Generation
+
+**Voice Command**: "generate template for [keywords]"
+
+**Example**: Say "generate template for location notify save"
+
+**What it does**:
+- Extracts keywords from your voice command
+- Generates a complete CANVASL YAML template with:
+  - Frontmatter (type, adjacency, speech config, macros, validation)
+  - Body content with usage instructions
+  - Proper CANVASL structure matching the specification
+
+**Supported Keywords**:
+- `location` → Geolocation API macro
+- `notify` → Notifications API macro
+- `save` → IndexedDB storage macro
+- `copy` → Clipboard API macro
+- `render` → WebGL rendering macro
+- `camera` → MediaDevices (video) macro
+- `microphone` → MediaDevices (audio) macro
+
+**Output**:
+- Displays generated YAML template in expandable panel
+- Copy to clipboard button
+- Download as `.yaml` file button
+- Voice confirmation: "Template generated successfully"
+
+#### 2. Markdown Frontmatter Parsing
+
+**Voice Command**: "parse md" or "parse markdown"
+
+**What it does**:
+- Prompts for Markdown content with YAML frontmatter
+- Parses frontmatter using `js-yaml`
+- Validates CANVASL template structure
+- Displays parsed content with validation results
+
+**Validation Checks**:
+- Required fields (type, speech config, macros)
+- Adjacency structure (edges and orientation arrays)
+- Macro structure (keyword, api, method)
+- Warnings for missing optional fields
+
+**Output**:
+- Parsed template ID, type, dimension
+- Validation status (valid/invalid)
+- Errors and warnings (if any)
+- Expandable sections for frontmatter and body
+
+### Usage Examples
+
+#### Example 1: Generate Template via Voice
+
+1. Click "🎤 Start Listening"
+2. Say: **"generate template for location notify save"**
+3. Template appears in yellow panel
+4. Click "📋 Copy YAML" to copy
+5. Click "💾 Download" to save file
+
+#### Example 2: Generate Template via Text
+
+1. Type in text field: **"generate template for location notify save render"**
+2. Press Enter
+3. Template generated and displayed
+
+#### Example 3: Parse Markdown
+
+1. Say: **"parse md"** or type **"parse md"**
+2. Paste Markdown content with frontmatter:
+   ```markdown
+   ---
+   type: canvasl-template
+   speech:
+     input:
+       keywords: [location, notify]
+   macros:
+     - keyword: location
+       api: geolocation
+       method: getCurrentPosition
+   ---
+   
+   # My Template
+   ```
+3. Parsed content appears in blue panel
+4. View validation results and expandable sections
+
+### Technical Implementation
+
+**Files Created**:
+- `src/canvasl/speech/template-generator.js` - Template generation logic
+- `src/canvasl/speech/frontmatter-parser.js` - MD parsing and validation
+
+**Dependencies Added**:
+- `js-yaml@^4.1.0` - YAML parsing and generation
+
+**Integration**:
+- Integrated into `SpeechInterface.jsx`
+- New keywords: `generate`, `template`, `parse`, `markdown`
+- State management for generated templates and parsed content
+- UI panels for displaying results
+
+### Template Structure
+
+Generated templates follow CANVASL specification:
+
+```yaml
+---
+type: canvasl-template
+id: template-1234567890
+dimension: 2
+adjacency:
+  edges: [e_location, e_notify, e_save]
+  orientation: [1, 1, 1]
+speech:
+  input:
+    lang: en-US
+    continuous: true
+    interimResults: true
+    keywords: [location, notify, save]
+  output:
+    voice: Google US English
+    rate: 1.0
+    pitch: 1.0
+macros:
+  - keyword: location
+    api: geolocation
+    method: getCurrentPosition
+    params:
+      enableHighAccuracy: true
+    type: [web_api, geolocation]
+  # ... more macros
+validates:
+  homology: true
+  byzantine: false
+  accessibility: true
+features:
+  version: 1.0.0
+  category: voice-controlled-app
+  generated: 2025-01-07T12:00:00.000Z
+---
+
+# Voice-Generated CANVASL Template
+...
+```
+
+### Error Handling
+
+**Template Generation Errors**:
+- Invalid command format → "Invalid command format. Say: generate template for [keywords]"
+- No keywords found → "No keywords found. Specify keywords like: location, notify, save"
+- Displayed in activity log with ❌ icon
+
+**Parsing Errors**:
+- Invalid MD format → "Invalid MD: No frontmatter found"
+- YAML parse error → "Failed to parse frontmatter: [error message]"
+- Validation errors → Displayed in parsed content panel
+
 ## Future Enhancements
 
 Potential improvements:
+- [x] Voice command templates ✅ **COMPLETE**
 - [ ] Custom wake word ("Hey CANVASL")
 - [ ] Multi-language support
-- [ ] Voice command templates
 - [ ] Speech-to-text export
 - [ ] Voice profile customization
 - [ ] Confidence threshold tuning
 - [ ] Command history navigation
 - [ ] Voice macros/shortcuts
+- [ ] Template library (save/load templates)
+- [ ] Template editing via voice
+- [ ] Direct file upload for MD parsing
 
 ## Technical Notes
 

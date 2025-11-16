@@ -1,16 +1,80 @@
-# React + Vite
+# CANVASL A₁₁ Demonstration
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **A peer-to-peer, topologically sound, self-sovereign operating system**
 
-Currently, two official plugins are available:
+**📖 [Complete Demonstration Documentation](./docs/CANVASL-DEMONSTRATION.md)** - Comprehensive guide covering Who, What, When, Where, Why, and How
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Quick Start
 
-## React Compiler
+```bash
+# Install dependencies
+npm install
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# Start development server
+npm run dev
 
-## Expanding the ESLint configuration
+# Open browser to http://localhost:5173/
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Features
+
+- 🎤 **Voice-Controlled Interface** - Generate CANVASL templates via voice commands
+- 📝 **Markdown Editor** - CodeMirror-based editor with YAML frontmatter support
+- 🎨 **Interactive Canvas** - Visualize DAG structure with projective/affine views
+- ⭐ **Animated Background** - Beautiful stars animation
+- 🔬 **Topological Validation** - Chain complex homology checking (∂² = 0)
+- 💾 **Content-Addressed Storage** - OPFS + IndexedDB for persistent node storage
+
+## Voice Commands
+
+- **"generate template for [keywords]"** - Generate YAML template
+- **"parse md"** - Parse Markdown frontmatter
+- **"create node"** - Create new MetaLogNode
+- **"validate homology"** - Check topological consistency
+- **"show stats"** - Read system statistics
+
+## Documentation
+
+- **[CANVASL-DEMONSTRATION.md](./docs/CANVASL-DEMONSTRATION.md)** - Complete demonstration guide
+- **[SPEECH_FEATURES.md](./SPEECH_FEATURES.md)** - Voice interface documentation
+- **[docs/01-CanvasL-A11.md](./docs/01-CanvasL-A11.md)** - CANVASL specification
+
+## Technology Stack
+
+- **React 19** - UI framework
+- **Vite 7** - Build tool
+- **Web Speech API** - Voice recognition and synthesis
+- **CodeMirror 6** - Markdown editor
+- **OPFS** - Origin Private File System
+- **IndexedDB** - Indexed database storage
+
+## Project Structure
+
+```
+src/
+├── components/          # UI components (Stars, Editor)
+├── canvasl/            # CANVASL core system
+│   ├── speech/         # Voice interface
+│   ├── chain/          # Chain complex operations
+│   ├── dag/            # DAG management
+│   └── storage/        # Storage adapters
+└── App.jsx             # Main application
+```
+
+## Browser Requirements
+
+- Chrome/Edge 25+ (recommended)
+- Safari 14.1+ (partial support)
+- Firefox (limited support)
+
+Requires microphone access for voice features.
+
+## License
+
+Private project - See repository for details.
+
+---
+
+**Status**: ✅ Fully Operational  
+**Version**: 1.0.0  
+**Last Updated**: 2025-01-07

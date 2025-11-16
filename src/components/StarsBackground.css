@@ -1,0 +1,147 @@
+/**
+ * Stars Background Styles
+ * 
+ * Animated starfield with twinkling and shooting stars
+ */
+
+.stars-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: linear-gradient(
+    to bottom,
+    #000000 0%,
+    #0a0a0a 25%,
+    #0f0f0f 50%,
+    #0a0a0a 75%,
+    #000000 100%
+  );
+  overflow: hidden;
+}
+
+/* Base star styling */
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+/* Layer-specific styling */
+.star-layer-0 {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.star-layer-1 {
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.star-layer-2 {
+  background: rgba(200, 220, 255, 0.4);
+  box-shadow: 0 0 4px rgba(200, 220, 255, 0.4);
+}
+
+/* Twinkling animation */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.star {
+  animation: twinkle infinite ease-in-out;
+}
+
+/* Shooting star */
+.shooting-star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8),
+              0 0 12px rgba(255, 255, 255, 0.6),
+              0 0 18px rgba(255, 255, 255, 0.4);
+  animation: shoot 3s linear forwards;
+  z-index: 0;
+}
+
+.shooting-star::before {
+  content: '';
+  position: absolute;
+  width: 100px;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+@keyframes shoot {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(1);
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(40vw, 40vh) scale(1.5);
+  }
+}
+
+/* Subtle parallax effect on scroll */
+@media (prefers-reduced-motion: no-preference) {
+  .stars-background {
+    will-change: transform;
+  }
+  
+  .star-layer-0 {
+    animation-duration: 2s;
+  }
+  
+  .star-layer-1 {
+    animation-duration: 3s;
+  }
+  
+  .star-layer-2 {
+    animation-duration: 4s;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .star {
+    animation: none;
+    opacity: 0.6;
+  }
+  
+  .shooting-star {
+    display: none;
+  }
+}
+
+/* Ensure content is above stars */
+.App {
+  position: relative;
+  z-index: 1;
+}
