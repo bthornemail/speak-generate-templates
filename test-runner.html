@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CANVASL Test Runner</title>
+  <style>
+    body {
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      padding: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+    h1 { color: #4fc3f7; }
+    #output {
+      background: #252526;
+      padding: 20px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.5;
+      border: 1px solid #3e3e42;
+    }
+    .pass { color: #4caf50; }
+    .fail { color: #f44336; }
+    .info { color: #2196f3; }
+    button {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 15px;
+    }
+    button:hover {
+      background: #1177bb;
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 CANVASL A₁₁ Test Runner</h1>
+  <button id="runTests">Run All Tests</button>
+  <div id="output">Click "Run All Tests" to begin...</div>
+
+  <script type="module">
+    import { runTests } from './src/canvasl/test.js';
+
+    const outputDiv = document.getElementById('output');
+    const runButton = document.getElementById('runTests');
+
+    // Override console.log to capture output
+    const originalLog = console.log;
+    const originalError = console.error;
+    let logs = [];
+
+    console.log = (...args) => {
+      logs.push(args.join(' '));
+      originalLog(...args);
+    };
+
+    console.error = (...args) => {
+      logs.push(args.join(' '));
+      originalError(...args);
+    };
+
+    runButton.addEventListener('click', async () => {
+      logs = [];
+      outputDiv.textContent = 'Running tests...\n\n';
+      runButton.disabled = true;
+
+      try {
+        const results = await runTests();
+
+        // Display captured logs
+        outputDiv.innerHTML = logs
+          .map(log => {
+            if (log.includes('✅')) return `<span class="pass">${log}</span>`;
+            if (log.includes('❌')) return `<span class="fail">${log}</span>`;
+            if (log.includes('🧪') || log.includes('📊') || log.includes('🎉')) {
+              return `<span class="info">${log}</span>`;
+            }
+            return log;
+          })
+          .join('\n');
+
+      } catch (error) {
+        outputDiv.innerHTML = `<span class="fail">Error running tests: ${error.message}</span>`;
+      } finally {
+        runButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

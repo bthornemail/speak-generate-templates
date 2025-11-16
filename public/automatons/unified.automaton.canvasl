@@ -1,0 +1,33 @@
+@version 1.0.0
+@schema unified-automaton-v1
+
+{"id": "unified-automaton", "type": "automaton", "scope": "unified", "description": "Unified automaton integrating all foundation files", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "unified"}}, "references": {"kernel": "#automaton.kernel.canvasl", "seed": "#automaton.kernel.seed.canvasl", "shape": "#metaverse.shape.canvasl", "centroid": "#metaverse.centroid.canvasl", "basis": "#autonomous.basis.canvasl"}, "metadata": {"regenerate": {"function": "r5rs:unify-automaton", "args": ["kernel", "seed", "shape", "centroid", "basis"]}}}
+
+{"id": "integration-point-kernel", "type": "integration", "target": "kernel", "description": "Integration point for kernel operations", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-kernel", "args": ["unified-automaton", "kernel"]}}}
+
+{"id": "integration-point-seed", "type": "integration", "target": "seed", "description": "Integration point for seed regeneration", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-seed", "args": ["unified-automaton", "seed"]}}}
+
+{"id": "integration-point-shape", "type": "integration", "target": "shape", "description": "Integration point for metaverse shape", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-shape", "args": ["unified-automaton", "shape"]}}}
+
+{"id": "integration-point-centroid", "type": "integration", "target": "centroid", "description": "Integration point for metaverse centroid", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-centroid", "args": ["unified-automaton", "centroid"]}}}
+
+{"id": "integration-point-basis", "type": "integration", "target": "basis", "description": "Integration point for autonomous basis", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-basis", "args": ["unified-automaton", "basis"]}}}
+
+{"id": "query-interface", "type": "interface", "scope": "query", "description": "SPARQL/ProLog/DataLog query interface", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "query"}}, "metadata": {"regenerate": {"function": "r5rs:create-query-interface", "args": ["unified-automaton"]}}}
+
+{"id": "dimensional-structure", "type": "structure", "dimensions": ["0D", "1D", "2D", "3D", "4D", "5D", "6D", "7D"], "description": "Complete dimensional structure", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,1,1,1,1,1,1], "form": "x⁸ + x⁷ + x⁶ + x⁵ + x⁴ + x³ + x² + x", "signature": "dimensional"}}, "metadata": {"regenerate": {"function": "r5rs:build-dimensional-structure", "args": ["0D", "1D", "2D", "3D", "4D", "5D", "6D", "7D"]}}}
+
+{"id": "link:unified-automaton→integration-point-kernel", "type": "edge", "fromNode": "unified-automaton", "toNode": "integration-point-kernel", "label": "integrates", "bipartite": {"type": "horizontal", "mapping": "automaton→integration", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-kernel", "args": ["unified-automaton", "kernel"]}}}
+
+{"id": "link:unified-automaton→integration-point-seed", "type": "edge", "fromNode": "unified-automaton", "toNode": "integration-point-seed", "label": "integrates", "bipartite": {"type": "horizontal", "mapping": "automaton→integration", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-seed", "args": ["unified-automaton", "seed"]}}}
+
+{"id": "link:unified-automaton→integration-point-shape", "type": "edge", "fromNode": "unified-automaton", "toNode": "integration-point-shape", "label": "integrates", "bipartite": {"type": "horizontal", "mapping": "automaton→integration", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-shape", "args": ["unified-automaton", "shape"]}}}
+
+{"id": "link:unified-automaton→integration-point-centroid", "type": "edge", "fromNode": "unified-automaton", "toNode": "integration-point-centroid", "label": "integrates", "bipartite": {"type": "horizontal", "mapping": "automaton→integration", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-centroid", "args": ["unified-automaton", "centroid"]}}}
+
+{"id": "link:unified-automaton→integration-point-basis", "type": "edge", "fromNode": "unified-automaton", "toNode": "integration-point-basis", "label": "integrates", "bipartite": {"type": "horizontal", "mapping": "automaton→integration", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "integration"}}, "metadata": {"regenerate": {"function": "r5rs:integrate-basis", "args": ["unified-automaton", "basis"]}}}
+
+{"id": "link:unified-automaton→query-interface", "type": "edge", "fromNode": "unified-automaton", "toNode": "query-interface", "label": "provides", "bipartite": {"type": "horizontal", "mapping": "automaton→interface", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "query"}}, "metadata": {"regenerate": {"function": "r5rs:create-query-interface", "args": ["unified-automaton"]}}}
+
+{"id": "link:unified-automaton→dimensional-structure", "type": "edge", "fromNode": "unified-automaton", "toNode": "dimensional-structure", "label": "includes", "bipartite": {"type": "horizontal", "mapping": "automaton→structure", "bqf": {"coefficients": [1,1,1,1,1,1,1,1], "form": "x⁸ + x⁷ + x⁶ + x⁵ + x⁴ + x³ + x² + x", "signature": "dimensional"}}, "metadata": {"regenerate": {"function": "r5rs:build-dimensional-structure", "args": ["0D", "1D", "2D", "3D", "4D", "5D", "6D", "7D"]}}}
+

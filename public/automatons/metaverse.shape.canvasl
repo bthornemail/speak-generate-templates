@@ -1,0 +1,89 @@
+@version 1.0.0
+@schema metaverse-shape-v1
+
+{"id": "8D-affine-space", "type": "topology", "dimension": "8D", "coordinates": ["boolean", "pair", "symbol", "number", "char", "string", "vector", "procedure"], "bipartite": {"partition": "topology", "bqf": {"coefficients": [0,0,0], "form": "0", "signature": "identity"}}, "metadata": {"regenerate": {"function": "r5rs:church-zero", "args": []}}}
+
+{"id": "S7-at-infinity", "type": "boundary", "dimension": "7D", "description": "Projective completion boundary", "ports": "all-io-operations", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "successor"}}, "metadata": {"regenerate": {"function": "r5rs:church-succ", "args": ["8D-affine-space"]}}}
+
+{"id": "stratification-0D", "type": "stratification", "level": 0, "dimension": "0D", "bipartite": {"partition": "topology", "bqf": {"coefficients": [0,0,0], "form": "0", "signature": "identity"}}, "metadata": {"regenerate": {"function": "r5rs:church-zero", "args": []}}}
+
+{"id": "stratification-1D", "type": "stratification", "level": 1, "dimension": "1D", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "successor"}}, "metadata": {"regenerate": {"function": "r5rs:church-succ", "args": ["stratification-0D"]}}}
+
+{"id": "stratification-2D", "type": "stratification", "level": 2, "dimension": "2D", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "pairing"}}, "metadata": {"regenerate": {"function": "r5rs:cons", "args": ["stratification-1D", "stratification-1D"]}}}
+
+{"id": "stratification-3D", "type": "stratification", "level": 3, "dimension": "3D", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "algebra"}}, "metadata": {"regenerate": {"function": "r5rs:church-add", "args": ["stratification-2D", "stratification-1D"]}}}
+
+{"id": "stratification-4D", "type": "stratification", "level": 4, "dimension": "4D", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "network"}}, "metadata": {"regenerate": {"function": "r5rs:parse-jsonl-canvas", "args": ["stratification-3D"]}}}
+
+{"id": "stratification-5D", "type": "stratification", "level": 5, "dimension": "5D", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "consensus"}}, "metadata": {"regenerate": {"function": "r5rs:datalog-query", "args": ["stratification-4D", "goal"]}}}
+
+{"id": "stratification-6D", "type": "stratification", "level": 6, "dimension": "6D", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "intelligence"}}, "metadata": {"regenerate": {"function": "r5rs:attention", "args": ["stratification-5D", "K", "V"]}}}
+
+{"id": "stratification-7D", "type": "stratification", "level": 7, "dimension": "7D", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "quantum"}}, "metadata": {"regenerate": {"function": "r5rs:qubit", "args": ["alpha", "beta"]}}}
+
+{"id": "8D-system-implementation", "type": "system", "dimension": "8D", "description": "Computational implementation of 8D affine space", "bipartite": {"partition": "system", "bqf": {"coefficients": [0,0,0], "form": "0", "signature": "identity"}}, "metadata": {"regenerate": {"function": "r5rs:church-zero", "args": []}}}
+
+{"id": "system-0D", "type": "system", "dimension": "0D", "bipartite": {"partition": "system", "bqf": {"coefficients": [0,0,0], "form": "0", "signature": "identity"}}, "metadata": {"regenerate": {"function": "r5rs:church-zero", "args": []}}}
+
+{"id": "system-1D", "type": "system", "dimension": "1D", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "successor"}}, "metadata": {"regenerate": {"function": "r5rs:church-succ", "args": ["system-0D"]}}}
+
+{"id": "system-2D", "type": "system", "dimension": "2D", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "pairing"}}, "metadata": {"regenerate": {"function": "r5rs:cons", "args": ["system-1D", "system-1D"]}}}
+
+{"id": "system-3D", "type": "system", "dimension": "3D", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "algebra"}}, "metadata": {"regenerate": {"function": "r5rs:church-add", "args": ["system-2D", "system-1D"]}}}
+
+{"id": "system-4D", "type": "system", "dimension": "4D", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "network"}}, "metadata": {"regenerate": {"function": "r5rs:parse-jsonl-canvas", "args": ["system-3D"]}}}
+
+{"id": "system-5D", "type": "system", "dimension": "5D", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "consensus"}}, "metadata": {"regenerate": {"function": "r5rs:datalog-query", "args": ["system-4D", "goal"]}}}
+
+{"id": "system-6D", "type": "system", "dimension": "6D", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "intelligence"}}, "metadata": {"regenerate": {"function": "r5rs:attention", "args": ["system-5D", "K", "V"]}}}
+
+{"id": "system-7D", "type": "system", "dimension": "7D", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "quantum"}}, "metadata": {"regenerate": {"function": "r5rs:qubit", "args": ["alpha", "beta"]}}}
+
+{"id": "h:8D-affine→system", "type": "edge", "fromNode": "8D-affine-space", "fromSide": "right", "toNode": "8D-system-implementation", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "affine→computational", "bqf": {"coefficients": [0,0,0], "form": "0", "signature": "identity"}}, "metadata": {"regenerate": {"function": "r5rs:cons", "args": ["8D-affine-space", "8D-system-implementation"]}}}
+
+{"id": "h:0D-topology→0D-system", "type": "edge", "fromNode": "stratification-0D", "fromSide": "right", "toNode": "system-0D", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "topology→system", "bqf": {"coefficients": [0,0,0], "form": "0", "signature": "identity"}}, "metadata": {"regenerate": {"function": "r5rs:church-zero", "args": []}}}
+
+{"id": "h:1D-topology→1D-system", "type": "edge", "fromNode": "stratification-1D", "fromSide": "right", "toNode": "system-1D", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "topology→system", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "successor"}}, "metadata": {"regenerate": {"function": "r5rs:church-succ", "args": ["stratification-1D"]}}}
+
+{"id": "h:2D-topology→2D-system", "type": "edge", "fromNode": "stratification-2D", "fromSide": "right", "toNode": "system-2D", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "topology→system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "pairing"}}, "metadata": {"regenerate": {"function": "r5rs:cons", "args": ["stratification-2D", "system-2D"]}}}
+
+{"id": "h:3D-topology→3D-system", "type": "edge", "fromNode": "stratification-3D", "fromSide": "right", "toNode": "system-3D", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "topology→system", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "algebra"}}, "metadata": {"regenerate": {"function": "r5rs:church-add", "args": ["stratification-3D", "system-3D"]}}}
+
+{"id": "h:4D-topology→4D-system", "type": "edge", "fromNode": "stratification-4D", "fromSide": "right", "toNode": "system-4D", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "topology→system", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "network"}}, "metadata": {"regenerate": {"function": "r5rs:parse-jsonl-canvas", "args": ["stratification-4D"]}}}
+
+{"id": "h:5D-topology→5D-system", "type": "edge", "fromNode": "stratification-5D", "fromSide": "right", "toNode": "system-5D", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "topology→system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "consensus"}}, "metadata": {"regenerate": {"function": "r5rs:datalog-query", "args": ["stratification-5D", "goal"]}}}
+
+{"id": "h:6D-topology→6D-system", "type": "edge", "fromNode": "stratification-6D", "fromSide": "right", "toNode": "system-6D", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "topology→system", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "intelligence"}}, "metadata": {"regenerate": {"function": "r5rs:attention", "args": ["stratification-6D", "K", "V"]}}}
+
+{"id": "h:7D-topology→7D-system", "type": "edge", "fromNode": "stratification-7D", "fromSide": "right", "toNode": "system-7D", "toSide": "left", "label": "topology→system", "bipartite": {"type": "horizontal", "mapping": "topology→system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "quantum"}}, "metadata": {"regenerate": {"function": "r5rs:qubit", "args": ["alpha", "beta"]}}}
+
+{"id": "v:0D→1D", "type": "edge", "fromNode": "stratification-0D", "fromSide": "bottom", "toNode": "stratification-1D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "0D→1D", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "successor"}}, "metadata": {"regenerate": {"function": "r5rs:church-succ", "args": ["stratification-0D"]}}}
+
+{"id": "v:1D→2D", "type": "edge", "fromNode": "stratification-1D", "fromSide": "bottom", "toNode": "stratification-2D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "1D→2D", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "pairing"}}, "metadata": {"regenerate": {"function": "r5rs:cons", "args": ["stratification-1D", "stratification-1D"]}}}
+
+{"id": "v:2D→3D", "type": "edge", "fromNode": "stratification-2D", "fromSide": "bottom", "toNode": "stratification-3D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "2D→3D", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "algebra"}}, "metadata": {"regenerate": {"function": "r5rs:church-add", "args": ["stratification-2D", "stratification-1D"]}}}
+
+{"id": "v:3D→4D", "type": "edge", "fromNode": "stratification-3D", "fromSide": "bottom", "toNode": "stratification-4D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "3D→4D", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "network"}}, "metadata": {"regenerate": {"function": "r5rs:parse-jsonl-canvas", "args": ["stratification-3D"]}}}
+
+{"id": "v:4D→5D", "type": "edge", "fromNode": "stratification-4D", "fromSide": "bottom", "toNode": "stratification-5D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "4D→5D", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "consensus"}}, "metadata": {"regenerate": {"function": "r5rs:datalog-query", "args": ["stratification-4D", "goal"]}}}
+
+{"id": "v:5D→6D", "type": "edge", "fromNode": "stratification-5D", "fromSide": "bottom", "toNode": "stratification-6D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "5D→6D", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "intelligence"}}, "metadata": {"regenerate": {"function": "r5rs:attention", "args": ["stratification-5D", "K", "V"]}}}
+
+{"id": "v:6D→7D", "type": "edge", "fromNode": "stratification-6D", "fromSide": "bottom", "toNode": "stratification-7D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "6D→7D", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "quantum"}}, "metadata": {"regenerate": {"function": "r5rs:qubit", "args": ["alpha", "beta"]}}}
+
+{"id": "v:7D→S7", "type": "edge", "fromNode": "stratification-7D", "fromSide": "bottom", "toNode": "S7-at-infinity", "toSide": "top", "label": "projective-completion", "bipartite": {"type": "vertical", "progression": "7D→S7", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "successor"}}, "metadata": {"regenerate": {"function": "r5rs:church-succ", "args": ["stratification-7D"]}}}
+
+{"id": "v:system-0D→system-1D", "type": "edge", "fromNode": "system-0D", "fromSide": "bottom", "toNode": "system-1D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "0D→1D", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "successor"}}, "metadata": {"regenerate": {"function": "r5rs:church-succ", "args": ["system-0D"]}}}
+
+{"id": "v:system-1D→system-2D", "type": "edge", "fromNode": "system-1D", "fromSide": "bottom", "toNode": "system-2D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "1D→2D", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "pairing"}}, "metadata": {"regenerate": {"function": "r5rs:cons", "args": ["system-1D", "system-1D"]}}}
+
+{"id": "v:system-2D→system-3D", "type": "edge", "fromNode": "system-2D", "fromSide": "bottom", "toNode": "system-3D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "2D→3D", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "algebra"}}, "metadata": {"regenerate": {"function": "r5rs:church-add", "args": ["system-2D", "system-1D"]}}}
+
+{"id": "v:system-3D→system-4D", "type": "edge", "fromNode": "system-3D", "fromSide": "bottom", "toNode": "system-4D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "3D→4D", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "network"}}, "metadata": {"regenerate": {"function": "r5rs:parse-jsonl-canvas", "args": ["system-3D"]}}}
+
+{"id": "v:system-4D→system-5D", "type": "edge", "fromNode": "system-4D", "fromSide": "bottom", "toNode": "system-5D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "4D→5D", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "consensus"}}, "metadata": {"regenerate": {"function": "r5rs:datalog-query", "args": ["system-4D", "goal"]}}}
+
+{"id": "v:system-5D→system-6D", "type": "edge", "fromNode": "system-5D", "fromSide": "bottom", "toNode": "system-6D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "5D→6D", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "intelligence"}}, "metadata": {"regenerate": {"function": "r5rs:attention", "args": ["system-5D", "K", "V"]}}}
+
+{"id": "v:system-6D→system-7D", "type": "edge", "fromNode": "system-6D", "fromSide": "bottom", "toNode": "system-7D", "toSide": "top", "label": "dimensional-progression", "bipartite": {"type": "vertical", "progression": "6D→7D", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "quantum"}}, "metadata": {"regenerate": {"function": "r5rs:qubit", "args": ["alpha", "beta"]}}}
+

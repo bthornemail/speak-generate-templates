@@ -1,0 +1,31 @@
+@version 1.0.0
+@schema metaverse-centroid-v1
+
+{"id": "virtual-centroid", "type": "centroid", "dimension": "8D", "coordinates": {"x": 0, "y": 0, "z": 0, "w": 0, "u": 0, "v": 0, "s": 0, "t": 0}, "bipartite": {"partition": "topology", "bqf": {"coefficients": [0.5,0.5,0.5], "form": "0.5x² + 0.5xy + 0.5y²", "signature": "balance"}}, "metadata": {"regenerate": {"function": "r5rs:polynomial-mean", "args": ["all-geometries"]}}}
+
+{"id": "schläfli-average", "type": "statistical", "property": "schläfli-symbol", "value": "{2,1,1,2,0,1,1,1}", "method": "mean", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,1,1,0,1,1,1], "form": "x⁸ + x⁷ + x⁶ + x⁵ + x³ + x² + x", "signature": "average"}}, "metadata": {"regenerate": {"function": "r5rs:compute-mean-schläfli", "args": ["all-polyhedra"]}}}
+
+{"id": "betti-mode", "type": "statistical", "property": "betti-numbers", "value": "{1,1,0}", "method": "mode", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,0], "form": "x² + x", "signature": "homology"}}, "metadata": {"regenerate": {"function": "r5rs:compute-mode-betti", "args": ["all-geometries"]}}}
+
+{"id": "polynomial-factorization", "type": "polynomial", "structure": "factorization", "factors": [{"coefficient": 1, "degree": 2}, {"coefficient": 1, "degree": 1}], "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,1], "form": "x² + x + 1", "signature": "factorized"}}, "metadata": {"regenerate": {"function": "r5rs:polynomial-factorize", "args": ["centroid-polynomial"]}}}
+
+{"id": "federated-identity", "type": "identity", "scope": "federated", "description": "Shared identity across all self-dual geometries", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,0,1], "form": "x² + 1", "signature": "identity"}}, "metadata": {"regenerate": {"function": "r5rs:compute-federated-identity", "args": ["virtual-centroid", "all-geometries"]}}}
+
+{"id": "face-mapping", "type": "mapping", "source": "clause", "target": "face", "description": "Map computational clauses to polyhedral faces", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "mapping"}}, "metadata": {"regenerate": {"function": "r5rs:map-clause-to-face", "args": ["clause", "polyhedron"]}}}
+
+{"id": "projective-space-identity", "type": "identity", "space": "projective", "includes": "points-at-infinity", "coordinates": "homogeneous", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "projective"}}, "metadata": {"regenerate": {"function": "r5rs:projective-completion", "args": ["affine-space"]}}}
+
+{"id": "affine-space-identity", "type": "identity", "space": "affine", "excludes": "points-at-infinity", "coordinates": "cartesian", "bipartite": {"partition": "topology", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "affine"}}, "metadata": {"regenerate": {"function": "r5rs:affine-complement", "args": ["projective-space"]}}}
+
+{"id": "link:virtual-centroid→federated-identity", "type": "edge", "fromNode": "virtual-centroid", "toNode": "federated-identity", "label": "computes", "bipartite": {"type": "horizontal", "mapping": "centroid→identity", "bqf": {"coefficients": [1,0,1], "form": "x² + 1", "signature": "identity"}}, "metadata": {"regenerate": {"function": "r5rs:compute-federated-identity", "args": ["virtual-centroid", "all-geometries"]}}}
+
+{"id": "link:schläfli-average→virtual-centroid", "type": "edge", "fromNode": "schläfli-average", "toNode": "virtual-centroid", "label": "contributes-to", "bipartite": {"type": "horizontal", "mapping": "statistics→centroid", "bqf": {"coefficients": [0.5,0.5,0.5], "form": "0.5x² + 0.5xy + 0.5y²", "signature": "balance"}}, "metadata": {"regenerate": {"function": "r5rs:polynomial-mean", "args": ["schläfli-average", "betti-mode"]}}}
+
+{"id": "link:betti-mode→virtual-centroid", "type": "edge", "fromNode": "betti-mode", "toNode": "virtual-centroid", "label": "contributes-to", "bipartite": {"type": "horizontal", "mapping": "statistics→centroid", "bqf": {"coefficients": [0.5,0.5,0.5], "form": "0.5x² + 0.5xy + 0.5y²", "signature": "balance"}}, "metadata": {"regenerate": {"function": "r5rs:polynomial-mean", "args": ["schläfli-average", "betti-mode"]}}}
+
+{"id": "link:polynomial-factorization→virtual-centroid", "type": "edge", "fromNode": "polynomial-factorization", "toNode": "virtual-centroid", "label": "structures", "bipartite": {"type": "horizontal", "mapping": "factorization→centroid", "bqf": {"coefficients": [1,1,1], "form": "x² + x + 1", "signature": "factorized"}}, "metadata": {"regenerate": {"function": "r5rs:polynomial-factorize", "args": ["centroid-polynomial"]}}}
+
+{"id": "link:face-mapping→federated-identity", "type": "edge", "fromNode": "face-mapping", "toNode": "federated-identity", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "mapping→identity", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "mapping"}}, "metadata": {"regenerate": {"function": "r5rs:map-clause-to-face", "args": ["clause", "polyhedron"]}}}
+
+{"id": "link:projective-space-identity→affine-space-identity", "type": "edge", "fromNode": "projective-space-identity", "toNode": "affine-space-identity", "label": "complements", "bipartite": {"type": "horizontal", "mapping": "projective→affine", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "projective"}}, "metadata": {"regenerate": {"function": "r5rs:affine-complement", "args": ["projective-space"]}}}
+

@@ -1,0 +1,24 @@
+{
+    "mcpServers": {
+"wikipedia-mcp": { 
+"command": "docker", 
+"args": [ "run", "-i", "--rm", "mcp/wikipedia-mcp" ]
+},
+"arxiv-mcp-server": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "ARXIV_STORAGE_PATH",
+        "-v",
+        "/home/main/automaton:/home/main/automaton",
+        "mcp/arxiv-mcp-server"
+      ],
+      "env": {
+        "ARXIV_STORAGE_PATH": "/home/main/automaton/papers"
+      }
+	 }
+   }
+}

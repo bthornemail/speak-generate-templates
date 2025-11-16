@@ -1,0 +1,43 @@
+@version 1.0.0
+@schema autonomous-basis-v1
+
+{"id": "autonomous-basis", "type": "basis", "capability": "self-sustaining", "description": "Autonomous basis for self-regeneration and evolution", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "autonomous"}}, "metadata": {"regenerate": {"function": "r5rs:establish-autonomous-basis", "args": ["kernel-seed", "metaverse-shape", "metaverse-centroid"]}}}
+
+{"id": "self-regeneration", "type": "capability", "scope": "regeneration", "description": "Ability to regenerate kernel from seed", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,0,1], "form": "x² + 1", "signature": "regeneration"}}, "metadata": {"regenerate": {"function": "r5rs:regenerate-from-seed", "args": ["automaton.kernel.seed.canvasl", "automaton.kernel.canvasl"]}}}
+
+{"id": "autonomous-evolution", "type": "capability", "scope": "evolution", "description": "Ability to evolve autonomously", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "evolution"}}, "metadata": {"regenerate": {"function": "r5rs:autonomous-evolution", "args": ["current-state", "goal-state"]}}}
+
+{"id": "goal-negotiation", "type": "capability", "scope": "consensus", "description": "Multi-agent goal negotiation", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "negotiation"}}, "metadata": {"regenerate": {"function": "r5rs:goal-negotiation", "args": ["agents", "goals", "constraints"]}}}
+
+{"id": "self-modification", "type": "capability", "scope": "modification", "description": "Ability to modify own structure", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "modification"}}, "metadata": {"regenerate": {"function": "r5rs:self-modify", "args": ["target-file", "modification-pattern"]}}}
+
+{"id": "performance-optimization", "type": "capability", "scope": "optimization", "description": "Autonomous performance optimization", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "optimization"}}, "metadata": {"regenerate": {"function": "r5rs:optimize-performance", "args": ["metrics", "constraints"]}}}
+
+{"id": "consensus-mechanism", "type": "mechanism", "scope": "consensus", "description": "Distributed consensus for decisions", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "consensus"}}, "metadata": {"regenerate": {"function": "r5rs:consensus-vote", "args": ["proposal", "agents", "threshold"]}}}
+
+{"id": "intelligence-integration", "type": "capability", "scope": "intelligence", "description": "AI-powered decision making", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "intelligence"}}, "metadata": {"regenerate": {"function": "r5rs:ai-decision", "args": ["context", "options", "history"]}}}
+
+{"id": "evolution-tracking", "type": "capability", "scope": "tracking", "description": "Track evolution history", "bipartite": {"partition": "system", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "tracking"}}, "metadata": {"regenerate": {"function": "r5rs:track-evolution", "args": ["state", "transition", "timestamp"]}}}
+
+{"id": "link:autonomous-basis→kernel-seed", "type": "edge", "fromNode": "autonomous-basis", "toNode": "automaton.kernel.seed.canvasl", "label": "regenerates-from", "bipartite": {"type": "horizontal", "mapping": "basis→seed", "bqf": {"coefficients": [1,0,1], "form": "x² + 1", "signature": "regeneration"}}, "metadata": {"regenerate": {"function": "r5rs:link-basis-to-seed", "args": ["autonomous-basis", "kernel-seed"]}}}
+
+{"id": "link:autonomous-basis→metaverse-shape", "type": "edge", "fromNode": "autonomous-basis", "toNode": "metaverse.shape.canvasl", "label": "uses-structure", "bipartite": {"type": "horizontal", "mapping": "basis→shape", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "autonomous"}}, "metadata": {"regenerate": {"function": "r5rs:link-basis-to-shape", "args": ["autonomous-basis", "metaverse-shape"]}}}
+
+{"id": "link:autonomous-basis→metaverse-centroid", "type": "edge", "fromNode": "autonomous-basis", "toNode": "metaverse.centroid.canvasl", "label": "uses-identity", "bipartite": {"type": "horizontal", "mapping": "basis→centroid", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "autonomous"}}, "metadata": {"regenerate": {"function": "r5rs:link-basis-to-centroid", "args": ["autonomous-basis", "metaverse-centroid"]}}}
+
+{"id": "link:autonomous-basis→self-regeneration", "type": "edge", "fromNode": "autonomous-basis", "toNode": "self-regeneration", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "basis→capability", "bqf": {"coefficients": [1,0,1], "form": "x² + 1", "signature": "regeneration"}}, "metadata": {"regenerate": {"function": "r5rs:regenerate-from-seed", "args": ["automaton.kernel.seed.canvasl", "automaton.kernel.canvasl"]}}}
+
+{"id": "link:autonomous-basis→autonomous-evolution", "type": "edge", "fromNode": "autonomous-basis", "toNode": "autonomous-evolution", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "basis→capability", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "evolution"}}, "metadata": {"regenerate": {"function": "r5rs:autonomous-evolution", "args": ["current-state", "goal-state"]}}}
+
+{"id": "link:autonomous-basis→goal-negotiation", "type": "edge", "fromNode": "autonomous-basis", "toNode": "goal-negotiation", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "basis→capability", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "negotiation"}}, "metadata": {"regenerate": {"function": "r5rs:goal-negotiation", "args": ["agents", "goals", "constraints"]}}}
+
+{"id": "link:autonomous-basis→self-modification", "type": "edge", "fromNode": "autonomous-basis", "toNode": "self-modification", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "basis→capability", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "modification"}}, "metadata": {"regenerate": {"function": "r5rs:self-modify", "args": ["target-file", "modification-pattern"]}}}
+
+{"id": "link:autonomous-basis→performance-optimization", "type": "edge", "fromNode": "autonomous-basis", "toNode": "performance-optimization", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "basis→capability", "bqf": {"coefficients": [1,1,0], "form": "x² + xy", "signature": "optimization"}}, "metadata": {"regenerate": {"function": "r5rs:optimize-performance", "args": ["metrics", "constraints"]}}}
+
+{"id": "link:autonomous-basis→consensus-mechanism", "type": "edge", "fromNode": "autonomous-basis", "toNode": "consensus-mechanism", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "basis→capability", "bqf": {"coefficients": [1,1,1], "form": "x² + xy + y²", "signature": "consensus"}}, "metadata": {"regenerate": {"function": "r5rs:consensus-vote", "args": ["proposal", "agents", "threshold"]}}}
+
+{"id": "link:autonomous-basis→intelligence-integration", "type": "edge", "fromNode": "autonomous-basis", "toNode": "intelligence-integration", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "basis→capability", "bqf": {"coefficients": [1,2,1], "form": "x² + 2xy + y²", "signature": "intelligence"}}, "metadata": {"regenerate": {"function": "r5rs:ai-decision", "args": ["context", "options", "history"]}}}
+
+{"id": "link:autonomous-basis→evolution-tracking", "type": "edge", "fromNode": "autonomous-basis", "toNode": "evolution-tracking", "label": "enables", "bipartite": {"type": "horizontal", "mapping": "basis→capability", "bqf": {"coefficients": [1,0,0], "form": "x²", "signature": "tracking"}}, "metadata": {"regenerate": {"function": "r5rs:track-evolution", "args": ["state", "transition", "timestamp"]}}}
+
