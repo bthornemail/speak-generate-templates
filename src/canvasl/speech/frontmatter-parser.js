@@ -150,18 +150,20 @@ export function validateTemplate(frontmatter) {
  * @returns {object} CANVASL template structure
  */
 export function toCanvaslStructure(parsed) {
-  const validation = validateTemplate(parsed.frontmatter);
+  // Ensure frontmatter exists
+  const frontmatter = parsed.frontmatter || {};
   
-  if (!validation.valid) {
-    throw new Error(`Template validation failed: ${validation.errors.join(', ')}`);
-  }
+  const validation = validateTemplate(frontmatter);
+  
+  // Don't throw on validation failure - return structure with validation errors
+  // This allows the UI to display validation errors instead of crashing
 
   return {
-    id: parsed.frontmatter.id || `template-${Date.now()}`,
-    type: parsed.frontmatter.type || 'canvasl-template',
-    dimension: parsed.frontmatter.dimension || 2,
-    frontmatter: parsed.frontmatter,
-    body: parsed.body,
+    id: frontmatter.id || `template-${Date.now()}`,
+    type: frontmatter.type || 'canvasl-template',
+    dimension: frontmatter.dimension ?? 2,
+    frontmatter: frontmatter,
+    body: parsed.body || '',
     validation: validation
   };
 }
@@ -174,24 +176,51 @@ export function toCanvaslStructure(parsed) {
  * @returns {Promise<object>} Complete parsed and validated structure
  */
 export async function parseAndValidate(mdContent) {
-  const parsed = parseMdFrontmatter(mdContent);
-  const structure = toCanvaslStructure(parsed);
-  
-  // Add AST validation
   try {
-    const astBuilder = new ASTBuilder();
-    const ast = await astBuilder.buildAST(mdContent);
-    const astValidator = new ASTValidator();
-    const astValidation = astValidator.validate(ast);
+    const parsed = parseMdFrontmatter(mdContent);
+    const structure = toCanvaslStructure(parsed);
     
-    // Merge AST validation results
-    structure.validation.errors.push(...astValidation.errors);
-    structure.validation.warnings.push(...astValidation.warnings);
-    structure.validation.valid = structure.validation.valid && astValidation.valid;
-    structure.ast = ast;
+    // Ensure validation object exists
+    if (!structure.validation) {
+      structure.validation = {
+        valid: false,
+        errors: ['Validation object missing'],
+        warnings: []
+      };
+    }
+    
+    // Add AST validation
+    try {
+      const astBuilder = new ASTBuilder();
+      const ast = await astBuilder.buildAST(mdContent);
+      const astValidator = new ASTValidator();
+      const astValidation = astValidator.validate(ast);
+      
+      // Merge AST validation results
+      if (astValidation) {
+        structure.validation.errors.push(...(astValidation.errors || []));
+        structure.validation.warnings.push(...(astValidation.warnings || []));
+        structure.validation.valid = structure.validation.valid && (astValidation.valid !== false);
+      }
+      structure.ast = ast;
+    } catch (error) {
+      structure.validation.warnings.push(`AST validation error: ${error.message}`);
+    }
+    
+    return structure;
   } catch (error) {
-    structure.validation.warnings.push(`AST validation error: ${error.message}`);
+    // Return structure with error instead of throwing
+    return {
+      id: `error-${Date.now()}`,
+      type: 'error',
+      dimension: 0,
+      frontmatter: {},
+      body: mdContent || '',
+      validation: {
+        valid: false,
+        errors: [error.message || 'Unknown parsing error'],
+        warnings: []
+      }
+    };
   }
-  
-  return structure;
 }

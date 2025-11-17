@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { OPFSStore } from './storage/opfs.js';
 import { IndexedDBStore } from './storage/idb.js';
 import { createChainComplex, addCell, eulerCharacteristic } from './chain/complex.js';
@@ -14,9 +15,11 @@ import { registerWebAuthn } from './crypto/webauthn.js';
 import { createDAG, addNode as addDagNode } from './dag/operations.js';
 import SpeechInterface from './SpeechInterface.jsx';
 import ProjectiveCanvas from './ProjectiveCanvas.jsx';
-import AffineMarkdownEditor from '../components/AffineMarkdownEditor.jsx';
+import AgenticChatDashboard from '../components/AgenticChatDashboard.jsx';
 
 export default function CANVASL() {
+  const { nodeId } = useParams();
+  const navigate = useNavigate();
   const [status, setStatus] = useState('Initializing...');
   const [opfs, setOpfs] = useState(null);
   const [idb, setIdb] = useState(null);
@@ -226,7 +229,17 @@ export default function CANVASL() {
   const handleNodeSelect = (nodeId) => {
     setSelectedNodeId(nodeId);
     setStatus(`Selected node: ${nodeId.slice(0, 20)}...`);
+    // Navigate to canvas route with node ID
+    navigate(`/canvas/${nodeId}`);
   };
+
+  // Load node from URL if nodeId param exists
+  useEffect(() => {
+    if (nodeId && dag && dag.nodes.has(nodeId)) {
+      setSelectedNodeId(nodeId);
+      setStatus(`Loaded node from URL: ${nodeId.slice(0, 20)}...`);
+    }
+  }, [nodeId, dag]);
 
   // Handle node creation from canvas
   const handleNodeCreateFromCanvas = (position) => {
@@ -234,19 +247,65 @@ export default function CANVASL() {
     createNode();
   };
 
+  // Get viewport size for consistent sizing
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const updateSize = () => {
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
   return (
     <div style={{ 
-      padding: '20px', 
       fontFamily: 'monospace', 
-      maxWidth: '900px', 
-      margin: '0 auto',
-      position: 'relative',
-      zIndex: 1,
-      background: 'rgba(20, 20, 20, 0.95)',
-      borderRadius: '8px',
-      backdropFilter: 'blur(10px)',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: viewportSize.width > 0 ? `${viewportSize.width}px` : '100vw',
+      height: viewportSize.height > 0 ? `${viewportSize.height}px` : '100vh',
+      overflow: 'hidden',
+      margin: 0,
+      padding: 0,
+      background: 'transparent'
     }}>
+      {/* Projective Canvas - Full Screen */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: viewportSize.width > 0 ? `${viewportSize.width}px` : '100vw',
+        height: viewportSize.height > 0 ? `${viewportSize.height}px` : '100vh',
+        zIndex: 0,
+        margin: 0,
+        padding: 0
+      }}>
+        <ProjectiveCanvas
+          dag={dag}
+          complex={complex}
+          onNodeSelect={handleNodeSelect}
+          onNodeCreate={handleNodeCreateFromCanvas}
+          key={forceUpdate}
+        />
+      </div>
+
+      {/* Overlay Panel (top-left) */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        zIndex: 100,
+        background: 'rgba(20, 20, 20, 0.95)',
+        borderRadius: '8px',
+        padding: '20px',
+        maxWidth: '400px',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+        border: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
       <h1 style={{ color: '#fff', textShadow: '0 0 10px rgba(100, 108, 255, 0.5)', marginBottom: '10px' }}>CANVASL A₁₁</h1>
       <p style={{ color: '#e0e0e0', fontSize: '16px', marginBottom: '20px' }}>
         Peer-to-Peer, Topologically Sound, Self-Sovereign Operating System
@@ -336,74 +395,31 @@ export default function CANVASL() {
           )}
         </div>
       </div>
-
-      <ProjectiveCanvas
-        dag={dag}
-        complex={complex}
-        onNodeSelect={handleNodeSelect}
-        onNodeCreate={handleNodeCreateFromCanvas}
-        key={forceUpdate}
-      />
-
-      {/* Affine Markdown Editor View */}
-      <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <h3 style={{ color: '#fff', margin: 0 }}>📝 Affine Markdown Editor</h3>
-          <button
-            onClick={() => setShowAffineEditor(!showAffineEditor)}
-            style={{
-              padding: '8px 15px',
-              background: showAffineEditor ? '#4caf50' : 'rgba(255, 255, 255, 0.1)',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '13px'
-            }}
-          >
-            {showAffineEditor ? '✕ Hide Editor' : '📝 Show Editor'}
-          </button>
-        </div>
-        
-        {showAffineEditor && (
-          <AffineMarkdownEditor
-            planeName={selectedNodeId ? `Affine View - Node ${selectedNodeId.slice(0, 8)}` : 'Affine View'}
-            nodeId={selectedNodeId}
-            initialContent={selectedNodeId && nodes.find(n => n.cid === selectedNodeId)?.content 
-              ? nodes.find(n => n.cid === selectedNodeId).content 
-              : ''}
-            onSave={(content) => {
-              console.log('Saving content:', content);
-              if (selectedNodeId) {
-                setStatus(`Content saved for node ${selectedNodeId.slice(0, 8)}`);
-              } else {
-                setStatus('Content saved (create a node to associate it)');
-              }
-            }}
-            onParse={(parsed) => {
-              console.log('Parsed template:', parsed);
-              setStatus(`Template parsed: ${parsed.type} (${parsed.dimension}D)`);
-            }}
-          />
-        )}
       </div>
 
-      <SpeechInterface onCommand={handleCommand} complex={complex} dag={dag} />
+      {/* Speech Interface (bottom overlay) */}
+      <div style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 100,
+        width: '90%',
+        maxWidth: '800px'
+      }}>
+        <SpeechInterface onCommand={handleCommand} complex={complex} dag={dag} />
+      </div>
 
-      <div style={{ marginTop: '30px', padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '5px', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-        <h4 style={{ color: '#fff', marginBottom: '10px' }}>About CANVASL A₁₁</h4>
-        <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#e0e0e0', marginBottom: '10px' }}>
-          This is a live implementation of the CANVASL A₁₁ specification - a peer-to-peer operating system
-          where every file is a signed, content-addressed node in a global hypergraph. The system uses:
-        </p>
-        <ul style={{ fontSize: '13px', color: '#e0e0e0', lineHeight: '1.8' }}>
-          <li><strong style={{ color: '#fff' }}>Chain Complexes:</strong> Algebraic topology for data structure validation</li>
-          <li><strong style={{ color: '#fff' }}>Homology:</strong> Ensures ∂² = 0 (boundary of boundary is zero)</li>
-          <li><strong style={{ color: '#fff' }}>Content Addressing:</strong> SHA-256 based CIDs for immutability</li>
-          <li><strong style={{ color: '#fff' }}>OPFS:</strong> Origin Private File System for fast local storage</li>
-          <li><strong style={{ color: '#fff' }}>WebAuthn:</strong> Biometric authentication (when available)</li>
-          <li><strong style={{ color: '#fff' }}>DAG:</strong> Directed Acyclic Graph for causality without timestamps</li>
-        </ul>
+      {/* Agentic Chat Dashboard (bottom-right) */}
+      <div style={{ zIndex: 100 }}>
+        <AgenticChatDashboard 
+          dag={dag} 
+          complex={complex}
+          onAgentCommand={(command) => {
+            console.log('[CANVASL] Agent command:', command);
+            // Handle agent commands here
+          }}
+        />
       </div>
     </div>
   );

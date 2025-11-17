@@ -96,18 +96,18 @@ export default function SpeechInterface({ onCommand, complex, dag }) {
     // Template generation command
     if (lower.includes('generate') && lower.includes('template')) {
       (async () => {
-        try {
+      try {
           const template = await templateGeneratorRef.current.generateFromCommand(text);
-          setGeneratedTemplate(template);
-          setShowTemplate(true);
-          const yaml = template.toYAML();
-          addLog(`✅ Template generated: ${template.frontmatter.id}`);
-          addLog(`📄 YAML:\n${yaml.substring(0, 200)}...`);
-          speak('Template generated successfully');
-        } catch (error) {
-          addLog(`❌ Error: ${error.message}`);
-          speak(`Error: ${error.message}`);
-        }
+        setGeneratedTemplate(template);
+        setShowTemplate(true);
+        const yaml = template.toYAML();
+        addLog(`✅ Template generated: ${template.frontmatter.id}`);
+        addLog(`📄 YAML:\n${yaml.substring(0, 200)}...`);
+        speak('Template generated successfully');
+      } catch (error) {
+        addLog(`❌ Error: ${error.message}`);
+        speak(`Error: ${error.message}`);
+      }
       })();
     }
     // MD parsing command

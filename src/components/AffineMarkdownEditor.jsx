@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
-import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { parseMdFrontmatter, parseAndValidate } from '../canvasl/speech/frontmatter-parser.js';
 import { canvaslLanguage } from '../canvasl/lsp/canvasl-language.js';
@@ -34,27 +33,45 @@ export default function AffineMarkdownEditor({
 
   // Parse frontmatter when content changes
   useEffect(() => {
+    let cancelled = false;
+    
     if (content && content.includes('---')) {
-      try {
-        const parsed = parseAndValidate(content);
-        setParsedData(parsed);
-        setValidationStatus({
-          valid: parsed.validation.valid,
-          errors: parsed.validation.errors,
-          warnings: parsed.validation.warnings
-        });
-        onParse?.(parsed);
-      } catch (error) {
-        setValidationStatus({
-          valid: false,
-          errors: [error.message],
-          warnings: []
-        });
-      }
+      // Handle async parseAndValidate
+      (async () => {
+        try {
+          const parsed = await parseAndValidate(content);
+          
+          // Check if component is still mounted
+          if (cancelled) return;
+          
+          setParsedData(parsed);
+          setValidationStatus({
+            valid: parsed.validation?.valid ?? false,
+            errors: parsed.validation?.errors ?? [],
+            warnings: parsed.validation?.warnings ?? []
+          });
+          onParse?.(parsed);
+        } catch (error) {
+          // Check if component is still mounted
+          if (cancelled) return;
+          
+          setValidationStatus({
+            valid: false,
+            errors: [error.message],
+            warnings: []
+          });
+          setParsedData(null);
+        }
+      })();
     } else {
       setParsedData(null);
       setValidationStatus(null);
     }
+    
+    // Cleanup function
+    return () => {
+      cancelled = true;
+    };
   }, [content, onParse]);
 
   const handleSave = () => {
@@ -161,7 +178,7 @@ Say keywords to trigger macros: "location", "notify"
         <div className="parsed-summary">
           <strong style={{ color: '#fff' }}>Parsed:</strong>
           <span style={{ color: '#e0e0e0', marginLeft: '10px' }}>
-            Type: {parsedData.type} | Dimension: {parsedData.dimension} | ID: {parsedData.id}
+            Type: {parsedData.type || 'N/A'} | Dimension: {parsedData.dimension ?? 'N/A'} | ID: {parsedData.id || 'N/A'}
           </span>
         </div>
       )}
@@ -212,10 +229,7 @@ Say keywords to trigger macros: "location", "notify"
           <CodeMirror
             value={content}
             height="500px"
-            extensions={[
-              canvaslLanguage({ lspServerUrl: 'ws://localhost:3000/lsp' }),
-              markdown()
-            ]}
+            extensions={[canvaslLanguage({ lspServerUrl: 'ws://localhost:3000/lsp' })]}
             theme={oneDark}
             onChange={(value) => setContent(value)}
             basicSetup={{

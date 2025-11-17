@@ -8,6 +8,7 @@
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-wasm';
 import { setWasmPaths } from '@tensorflow/tfjs-backend-wasm';
+import { ModelImportExport } from './model-import-export.js';
 
 // Set WASM paths (CDN)
 setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.15.0/dist/');
@@ -20,6 +21,7 @@ export class WASMMLEngine {
     this.model = null;
     this.initialized = false;
     this.embeddingCache = new Map(); // Cache embeddings by state hash
+    this.modelImportExport = new ModelImportExport();
   }
 
   /**
@@ -274,6 +276,82 @@ export class WASMMLEngine {
    */
   isInitialized() {
     return this.initialized;
+  }
+
+  /**
+   * Export model to file
+   * 
+   * @param {string} format - Export format ('json', 'weights', 'full')
+   * @returns {Promise<Blob>} Model file blob
+   */
+  async exportModel(format = 'json') {
+    if (!this.model) {
+      throw new Error('No model to export');
+    }
+
+    return await this.modelImportExport.exportModel(this.model, format);
+  }
+
+  /**
+   * Import model from file
+   * 
+   * @param {File|Blob|string} source - Model source
+   * @param {Object} options - Import options
+   * @returns {Promise<void>}
+   */
+  async importModel(source, options = {}) {
+    const importedModel = await this.modelImportExport.importModel(source, options);
+    
+    // Replace current model
+    if (this.model) {
+      this.model.dispose();
+    }
+    
+    this.model = importedModel;
+    
+    // Save to IndexedDB
+    try {
+      await this.modelImportExport.saveToIndexedDB(this.model, 'automaton-embedding-model');
+      console.log('[WASM ML] Model imported and saved to IndexedDB');
+    } catch (error) {
+      console.warn('[WASM ML] Failed to save imported model:', error);
+    }
+  }
+
+  /**
+   * Export and download model
+   * 
+   * @param {string} format - Export format
+   * @param {string} filename - Optional filename
+   */
+  async exportAndDownload(format = 'json', filename = null) {
+    if (!this.model) {
+      throw new Error('No model to export');
+    }
+
+    await this.modelImportExport.exportAndDownload(this.model, format, filename);
+  }
+
+  /**
+   * Load model from IndexedDB
+   * 
+   * @param {string} name - Model name
+   * @returns {Promise<void>}
+   */
+  async loadModelFromIndexedDB(name = 'automaton-embedding-model') {
+    try {
+      const model = await this.modelImportExport.loadFromIndexedDB(name);
+      
+      if (this.model) {
+        this.model.dispose();
+      }
+      
+      this.model = model;
+      console.log('[WASM ML] Model loaded from IndexedDB');
+    } catch (error) {
+      console.warn('[WASM ML] Failed to load model from IndexedDB:', error);
+      throw error;
+    }
   }
 }
 

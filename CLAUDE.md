@@ -4,27 +4,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**read-speak-generate** (repo: speak-create) is a React + Vite application implementing CANVASL (Canvas Language) - a voice-controlled web application system with mathematical foundations in sheaf theory and algebraic topology.
+**CANVASL A₁₁** is a fully operational React + Vite application implementing a peer-to-peer, topologically sound operating system based on sheaf theory and algebraic topology. The system is voice-controlled, content-addressed, and mathematically validated.
 
-**Current Implementation**: React 19 + Vite 7 web application (JavaScript, not TypeScript)
-**Design Documentation**: Complete mathematical formalization in `docs/` directory
+**Status**: ✅ Fully Operational (not a scaffold - complete implementation)
 
-The system combines:
-- Voice-controlled web applications via Web Speech API
-- W3C API macros for browser functionality (geolocation, notifications, storage, WebGL, etc.)
-- Sheaf-theoretic mathematical foundations for distributed consistency
-- M-theory inspired architecture with 11 autonomous automata
-- Homological validation using algebraic topology (chain complexes, Betti numbers)
-- Byzantine fault tolerance via topological invariants
+**Tech Stack**: React 19 + Vite 7 + JavaScript (not TypeScript)
+
+**Key Features**:
+- Voice-controlled interface via Web Speech API
+- Content-addressed storage (OPFS + IndexedDB)
+- Homological validation (chain complexes, Betti numbers)
+- Interactive projective/affine canvas views
+- MCP and LSP servers for external integration
+- WASM-based ML engine (TensorFlow.js)
+- NLP processing with wink-nlp
+- CodeMirror-based markdown editor with YAML frontmatter
 
 ## Development Commands
 
-### Essential Commands
 ```bash
-# Start development server (runs on --host for network access)
+# Development server (accessible on local network)
 npm run dev
 
-# Build for production
+# Production build
 npm run build
 
 # Lint code
@@ -32,88 +34,155 @@ npm run lint
 
 # Preview production build
 npm run preview
+
+# MCP Servers
+npm run mcp:server      # CANVASL MCP server
+npm run mcp:opencode    # OpenCode MCP server
+npm run mcp:test        # Test MCP servers
+
+# LSP Servers
+npm run lsp:server      # CANVASL LSP server
+npm run lsp:bridge      # WebSocket bridge for browser LSP
 ```
 
-### Development Workflow
-- Vite dev server includes HMR (Hot Module Replacement)
-- Edit `src/App.jsx` to see changes instantly
-- Dev server accessible on local network via `--host` flag
+## Project Architecture
 
-## Current Project Structure
+### Core System (`src/canvasl/`)
 
-```
-src/
-  App.jsx         # Main React component
-  main.jsx        # React app entry point
-  App.css         # Component styles
-  index.css       # Global styles
-  assets/         # Static assets
-public/           # Public static files
-docs/             # Mathematical design docs (CANVASL theory)
-dist/             # Production build output (generated)
-```
+The CANVASL system is organized into cohesive subsystems:
 
-## Planned Architecture (from docs/)
+**Storage Layer** (`storage/`):
+- `opfs.js`: Origin Private File System adapter for fast local file storage
+- `idb.js`: IndexedDB adapter for queryable node storage
+- Both use content addressing (SHA-256 CIDs)
 
-### Mathematical Foundation (Sheaf Theory)
-The CANVASL design is based on sheaf theory over a discrete 11-point topological space:
+**Chain Complex System** (`chain/`):
+- `complex.js`: Chain complex data structure (C₀ through C₄)
+- `homology.js`: Betti number computation and homological validation
+- Validates ∂² = 0 (boundary of boundary is zero)
 
-- **Base Space**: 11 discrete autonomous automata (A₁...A₁₁) representing M-theory dimensions
-- **Local Data**: Chain complexes with 5 graded pieces (C₀ through C₄):
-  - C₀: Keywords (0-cells, vertices)
-  - C₁: Edges with types `[schema, identifier]` (1-cells)
-  - C₂: Documents/Templates with frontmatter (2-cells, faces)
-  - C₃: Interface triples (3-cells, solids)
-  - C₄: Evolution contexts (4-cells, hypervolumes)
-- **Boundary Operators**: ∂ₙ: Cₙ → Cₙ₋₁ satisfying ∂ₙ ∘ ∂ₙ₊₁ = 0
-- **Consistency**: Global consistency requires Ȟ¹(X, K) = 0 (first sheaf cohomology vanishes)
+**DAG Management** (`dag/`):
+- `operations.js`: Parent-based causality without timestamps
+- `merge.js`: Three-way merge algorithms for distributed nodes
+- Content-addressed hypergraph structure
 
-### Planned Components (To Be Implemented)
+**Cryptographic Primitives** (`crypto/`):
+- `cid.js`: Content identifier (CID) generation using SHA-256
+- `webauthn.js`: WebAuthn registration for authentication
+- `signature.js`: Digital signatures for node verification
 
-1. **CANVASL Templates** (C₂ cells)
-   - YAML frontmatter with voice I/O configuration
-   - Macro definitions mapping keywords to W3C APIs
-   - Adjacency structure defining boundary maps
-   - Validation rules (homology, Byzantine, accessibility)
+**Voice Interface** (`speech/`):
+- `recognition.js`: Web Speech API wrapper for voice input
+- `synthesis.js`: Speech synthesis for audio feedback
+- `template-generator.js`: Generates CANVASL YAML from voice keywords
+- `frontmatter-parser.js`: Parses/validates YAML frontmatter
+- `voice-macros.js`: Macro expansion for W3C APIs
+- `template-library.js`: Template storage and retrieval
+- `command-history.js`: Voice command history tracking
+- `export-handler.js`: Export templates to various formats
+- `file-upload-handler.js`: File upload processing
 
-2. **Type-Based Resolution** (Functors)
-   - Resolution functors Res_S for each schema S
-   - Schemas: `google_drive`, `redis_key`, `node_id`, `web_api`, `file`, `http`, `peer`
-   - Restriction maps for sheaf gluing
-   - Natural transformations between schemas
+**Machine Learning** (`ml/`):
+- `wasm-ml-engine.js`: TensorFlow.js WASM backend
+- `model-import-export.js`: ML model serialization
 
-3. **Homological Validation**
-   - Betti numbers βₙ = rank(Hₙ) measure topological features
-   - Euler characteristic χ = Σ(-1)ⁿβₙ
-   - Merkle trees over homological invariants for Byzantine consensus
-   - Boundary square verification: ∂ₙ ∘ ∂ₙ₊₁ = 0
+**NLP Processing** (`nlp/`):
+- Integration with wink-nlp for text analysis
+- Semantic understanding of voice commands
 
-4. **Autonomous Automata**
-   - Self-contained agents that load/execute templates
-   - Maintain chain complex state with persistence
-   - Autonomous behavior loops (execution, self-modification, garbage collection)
-   - Peer federation with CRDT-style state merging
+**LSP Integration** (`lsp/`):
+- `canvasl-language.js`: Language definitions for LSP
 
-## Tech Stack
+**AST Processing** (`ast/`):
+- Abstract syntax tree operations for CANVASL templates
 
-- **Framework**: React 19.2
-- **Build Tool**: Vite 7.2
-- **Language**: JavaScript (JSX)
-- **Linting**: ESLint 9 with React Hooks and React Refresh plugins
-- **Module System**: ES Modules (`type: "module"`)
+**Autonomous Automata** (`automaton/`):
+- Self-contained agents (A₁ through A₁₁)
+- Autonomous execution loops
 
-## ESLint Configuration
+**Agents** (`agents/`):
+- Agent coordination and orchestration
 
-Custom rules in `eslint.config.js`:
-- Ignores `dist/` directory
-- React Hooks rules via `eslint-plugin-react-hooks`
-- React Refresh for Fast Refresh support
-- Custom rule: `no-unused-vars` allows uppercase constants (e.g., `const API_KEY`)
+**Canvas Rendering** (`canvas/`):
+- Low-level canvas operations for visualization
 
-## Implementation Guidance
+**Icons** (`icons/`):
+- SVG icon components
 
-### CANVASL Template Format (To Implement)
-Templates will be Markdown files with YAML frontmatter:
+**Meta-Log** (`meta-log/`):
+- MetaLogNode structure for DAG nodes
+
+### Main Components
+
+**`CANVASL.jsx`**: Main React component orchestrating the entire system
+- Initializes storage (OPFS + IndexedDB)
+- Creates chain complex and DAG structures
+- Manages state for Betti numbers, Euler characteristic
+- Handles node creation and selection
+- Coordinates speech interface and canvas rendering
+
+**`ProjectiveCanvas.jsx`**: Interactive canvas visualization
+- Projective plane rendering with affine coordinate views
+- DAG structure visualization (parent-child relationships)
+- Node selection and interaction
+- Circular layout algorithm for node positioning
+
+**`SpeechInterface.jsx`**: Voice command interface
+- Continuous speech recognition
+- Command parsing and execution
+- Template generation from voice input
+- Audio feedback via speech synthesis
+
+### UI Components (`src/components/`)
+
+**`AffineMarkdownEditor.jsx`**: CodeMirror-based markdown editor
+- YAML frontmatter support
+- Real-time parsing and validation
+- Template loading and editing
+
+**`AffineSVGComposer.jsx`**: SVG composition interface
+- Visual editing of SVG elements
+- Affine transformation controls
+
+**`AgenticChatDashboard.jsx`**: Chat interface for agent interaction
+- Multi-agent conversation UI
+- Command execution interface
+
+**`StarsBackground.jsx`**: Animated background
+- Beautiful stars animation for visual depth
+
+**Affine Components** (`affine/`):
+- Specialized affine transformation components
+
+### External Servers
+
+**MCP Server** (`mcp-server/`):
+- Model Context Protocol server exposing CANVASL operations
+- Tools: `generate_template`, `parse_markdown`, `validate_template`, `compute_homology`, etc.
+- JSON-RPC 2.0 over stdio
+- See `mcp-server/README.md` for full tool list
+
+**LSP Server** (`lsp-server/`):
+- Language Server Protocol for CANVASL templates
+- WebSocket bridge for browser-based LSP
+- Provides completion, validation, hover information
+
+## Key Implementation Details
+
+### Chain Complex Structure
+
+The system implements a 5-dimensional chain complex:
+- **C₀**: Keywords (0-cells, vertices)
+- **C₁**: Edges with types `[schema, identifier]`
+- **C₂**: Documents/Templates with frontmatter
+- **C₃**: Interface triples
+- **C₄**: Evolution contexts
+
+Boundary operators ∂ₙ: Cₙ → Cₙ₋₁ satisfy ∂² = 0 (verified by `HomologyValidator`)
+
+### CANVASL Template Format
+
+Templates are Markdown files with YAML frontmatter:
 
 ```yaml
 ---
@@ -141,49 +210,101 @@ macros:
     params: { enableHighAccuracy: true }
     type: [web_api, geolocation]
 ---
+
+# Template Content
+
+Markdown content here...
 ```
 
-### Web Speech API Integration
-When implementing voice features:
-- Check browser support: `window.SpeechRecognition || window.webkitSpeechRecognition`
-- Continuous recognition requires restart on `onend` event
-- Keywords matched case-insensitively in transcripts
-- Speech synthesis must await completion before next utterance
+### Voice Commands
 
-### Homological Validation (Future)
-When implementing chain complex operations:
-1. Compute boundary matrices for all dimensions
-2. Verify ∂ₙ ∘ ∂ₙ₊₁ = 0 (boundary square condition)
-3. Compute Betti numbers to check topology preservation
-4. Ensure H¹ = 0 for global consistency
+The system recognizes:
+- **"generate template for [keywords]"** - Generate YAML template from keywords
+- **"parse md"** - Parse current Markdown frontmatter
+- **"create node"** - Create new MetaLogNode in DAG
+- **"validate homology"** - Check topological consistency (∂² = 0)
+- **"show stats"** - Display Betti numbers and Euler characteristic
 
-## M-Theory Correspondence
+### Content Addressing
 
-The design maps 11 automata to M-theory dimensions:
+All nodes use SHA-256 based Content Identifiers (CIDs):
+- Immutable references to content
+- Cryptographic verification
+- Deduplication via content addressing
+
+### Storage Strategy
+
+**OPFS (Origin Private File System)**:
+- Fast, private file storage
+- Direct file system access
+- Used for bulk content storage
+
+**IndexedDB**:
+- Queryable indexed database
+- Node metadata and relationships
+- Used for DAG traversal and queries
+
+Both stores maintain consistency via CID-based addressing.
+
+## Vite Configuration
+
+Special handling for CodeMirror modules:
+- Deduplication of `@codemirror/*` and `@lezer/*` packages
+- Forced re-optimization to prevent version conflicts
+- CommonJS transformation for mixed ES/CommonJS modules
+
+This prevents the "Unrecognized extension value in extension set" error.
+
+## ESLint Configuration
+
+- Uses flat config format (`eslint.config.js`)
+- Ignores `dist/` directory
+- React Hooks rules for proper hook usage
+- React Refresh for Fast Refresh support
+- Custom rule: `no-unused-vars` allows uppercase constants (e.g., `const API_KEY`)
+
+## Mathematical Foundations
+
+### Sheaf Theory
+The system is based on sheaf theory over 11 discrete points (autonomous automata A₁...A₁₁):
+- Local data: Chain complexes at each automaton
+- Gluing: Restriction maps ensure consistency
+- Cohomology: H¹ = 0 ensures global consistency
+
+### M-Theory Correspondence
 - A₁...A₁₀: 10D type IIA/IIB superstring theory
 - A₁₁: 11th dimension (M-theory uplift)
+- Chain dimensions map to physical branes (D0, strings, D2, D3, M5)
+- E₈×E₈ structure: A₁...A₅ (first E₈), A₆...A₁₀ (second E₈)
 
-Chain complex dimensions correspond to physical branes:
-- C₀ (vertices) ↔ D0-branes
-- C₁ (edges) ↔ fundamental strings
-- C₂ (faces) ↔ D2-branes, worldsheets
-- C₃ (solids) ↔ D3-branes
-- C₄ (hypervolumes) ↔ M5-branes wrapping S¹
+### Homological Invariants
+- Betti numbers βₙ measure topological features
+- Euler characteristic χ = Σ(-1)ⁿβₙ
+- Merkle trees over homological invariants for Byzantine consensus
 
-E₈×E₈ structure: A₁...A₅ form first E₈, A₆...A₁₀ form second E₈.
+## Documentation
 
-## Design Documentation
+Comprehensive documentation in `docs/`:
+- **`CANVASL-DEMONSTRATION.md`**: Complete demonstration guide (Who, What, When, Where, Why, How)
+- **`MCP-SERVER.md`**: MCP server documentation
+- **`NLP-LSP-INTEGRATION.md`**: NLP and LSP integration details
+- **`WASM-ML-INTEGRATION.md`**: WASM ML engine documentation
+- **`SPEECH_FEATURES_IMPLEMENTATION.md`**: Voice interface details
+- **`PROJECTIVE_AFFINE_ARCHITECTURE.md`**: Canvas architecture
+- **`01-CanvasL-A11.md`**: Core CANVASL specification
+- **`00-Inbox/`**: Design documents and planning materials
 
-Comprehensive mathematical formalization in `docs/`:
-- `01-canvasl-macros.md`: Sheaf theory, chain complexes, homology, TypeScript examples
-- `02-templates-macros.md`: Template compiler, Web Speech API handlers, W3C macros
-- `03-federated-autonomous-system.md`: Complete autonomous automaton implementation
+## Browser Requirements
 
-These docs contain production-ready TypeScript implementations that can be adapted to the React/JavaScript codebase.
+- Chrome/Edge 25+ (recommended - full support)
+- Safari 14.1+ (partial support)
+- Firefox (limited Web Speech API support)
+- Requires microphone access for voice features
 
 ## Repository Information
 
 - **Package Name**: `read-speak-generate` (private)
 - **Repository**: https://github.com/bthornemail/chat2d
 - **Author**: Brian Thorne
-- **Current State**: Vite + React scaffold, CANVASL theory documented in `docs/`
+- **License**: Private
+- **Version**: 1.0.0

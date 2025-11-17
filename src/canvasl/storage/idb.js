@@ -6,7 +6,7 @@
  * IndexedDB Store for CANVASL metadata
  */
 export class IndexedDBStore {
-  constructor(dbName = 'canvasl', version = 1) {
+  constructor(dbName = 'canvasl', version = 2) {
     this.dbName = dbName;
     this.version = version;
     /** @type {IDBDatabase|null} */
@@ -29,6 +29,7 @@ export class IndexedDBStore {
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
+        const oldVersion = event.oldVersion || 0;
 
         // Nodes store
         if (!db.objectStoreNames.contains('nodes')) {
@@ -48,7 +49,33 @@ export class IndexedDBStore {
           db.createObjectStore('complex', { keyPath: 'id' });
         }
 
-        console.log('[IndexedDB] Created object stores');
+        // Command history store (version 2+)
+        if (oldVersion < 2 && !db.objectStoreNames.contains('commandHistory')) {
+          const history = db.createObjectStore('commandHistory', { keyPath: 'id', autoIncrement: true });
+          history.createIndex('by-timestamp', 'timestamp', { unique: false });
+          history.createIndex('by-command', 'command', { unique: false });
+        }
+
+        // Templates store (version 2+)
+        if (oldVersion < 2 && !db.objectStoreNames.contains('templates')) {
+          const templates = db.createObjectStore('templates', { keyPath: 'id' });
+          templates.createIndex('by-name', 'name', { unique: false });
+          templates.createIndex('by-timestamp', 'timestamp', { unique: false });
+        }
+
+        // Voice macros store (version 2+)
+        if (oldVersion < 2 && !db.objectStoreNames.contains('voiceMacros')) {
+          const macros = db.createObjectStore('voiceMacros', { keyPath: 'id' });
+          macros.createIndex('by-trigger', 'trigger', { unique: true });
+        }
+
+        // Voice profiles store (version 2+)
+        if (oldVersion < 2 && !db.objectStoreNames.contains('voiceProfiles')) {
+          const profiles = db.createObjectStore('voiceProfiles', { keyPath: 'id' });
+          profiles.createIndex('by-name', 'name', { unique: false });
+        }
+
+        console.log('[IndexedDB] Created/upgraded object stores');
       };
     });
   }
@@ -272,6 +299,336 @@ export class IndexedDBStore {
 
         resolve(complex);
       };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Add command to history
+   * 
+   * @param {string} command - Command text
+   * @param {string} [type] - Command type (voice/text)
+   * @returns {Promise<number>} Command ID
+   */
+  async addCommandHistory(command, type = 'voice') {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('commandHistory', 'readwrite');
+      const store = tx.objectStore('commandHistory');
+
+      const record = {
+        command,
+        type,
+        timestamp: Date.now()
+      };
+
+      const request = store.add(record);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get command history
+   * 
+   * @param {number} limit - Maximum number of commands
+   * @returns {Promise<Array>} Command history
+   */
+  async getCommandHistory(limit = 50) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('commandHistory', 'readonly');
+      const store = tx.objectStore('commandHistory');
+      const index = store.index('by-timestamp');
+
+      const commands = [];
+      const request = index.openCursor(null, 'prev'); // Descending order
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor && commands.length < limit) {
+          commands.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(commands);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Save template
+   * 
+   * @param {string} id - Template ID
+   * @param {Object} template - Template object
+   * @param {string} template.name - Template name
+   * @param {Object} template.frontmatter - Template frontmatter
+   * @param {string} template.body - Template body
+   * @returns {Promise<void>}
+   */
+  async saveTemplate(id, template) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('templates', 'readwrite');
+      const store = tx.objectStore('templates');
+
+      const record = {
+        id,
+        name: template.name || id,
+        frontmatter: template.frontmatter,
+        body: template.body,
+        timestamp: Date.now()
+      };
+
+      const request = store.put(record);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Load template
+   * 
+   * @param {string} id - Template ID
+   * @returns {Promise<Object|null>} Template or null
+   */
+  async loadTemplate(id) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('templates', 'readonly');
+      const store = tx.objectStore('templates');
+
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * List all templates
+   * 
+   * @returns {Promise<Array>} Array of templates
+   */
+  async listTemplates() {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('templates', 'readonly');
+      const store = tx.objectStore('templates');
+
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Delete template
+   * 
+   * @param {string} id - Template ID
+   * @returns {Promise<void>}
+   */
+  async deleteTemplate(id) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('templates', 'readwrite');
+      const store = tx.objectStore('templates');
+
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Save voice macro
+   * 
+   * @param {string} id - Macro ID
+   * @param {string} trigger - Voice trigger phrase
+   * @param {string} action - Action to execute
+   * @param {Object} [params] - Action parameters
+   * @returns {Promise<void>}
+   */
+  async saveVoiceMacro(id, trigger, action, params = {}) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('voiceMacros', 'readwrite');
+      const store = tx.objectStore('voiceMacros');
+
+      const record = {
+        id,
+        trigger: trigger.toLowerCase(),
+        action,
+        params,
+        timestamp: Date.now()
+      };
+
+      const request = store.put(record);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get voice macro by trigger
+   * 
+   * @param {string} trigger - Trigger phrase
+   * @returns {Promise<Object|null>} Macro or null
+   */
+  async getVoiceMacro(trigger) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('voiceMacros', 'readonly');
+      const store = tx.objectStore('voiceMacros');
+      const index = store.index('by-trigger');
+
+      const request = index.get(trigger.toLowerCase());
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * List all voice macros
+   * 
+   * @returns {Promise<Array>} Array of macros
+   */
+  async listVoiceMacros() {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('voiceMacros', 'readonly');
+      const store = tx.objectStore('voiceMacros');
+
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Delete voice macro
+   * 
+   * @param {string} id - Macro ID
+   * @returns {Promise<void>}
+   */
+  async deleteVoiceMacro(id) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('voiceMacros', 'readwrite');
+      const store = tx.objectStore('voiceMacros');
+
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Save voice profile
+   * 
+   * @param {string} id - Profile ID
+   * @param {Object} profile - Voice profile
+   * @param {string} profile.name - Profile name
+   * @param {string} [profile.lang] - Language
+   * @param {number} [profile.rate] - Speech rate
+   * @param {number} [profile.pitch] - Speech pitch
+   * @param {number} [profile.volume] - Speech volume
+   * @param {string} [profile.voice] - Voice name
+   * @returns {Promise<void>}
+   */
+  async saveVoiceProfile(id, profile) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('voiceProfiles', 'readwrite');
+      const store = tx.objectStore('voiceProfiles');
+
+      const record = {
+        id,
+        name: profile.name || id,
+        lang: profile.lang || 'en-US',
+        rate: profile.rate ?? 1.0,
+        pitch: profile.pitch ?? 1.0,
+        volume: profile.volume ?? 1.0,
+        voice: profile.voice || null,
+        timestamp: Date.now()
+      };
+
+      const request = store.put(record);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Load voice profile
+   * 
+   * @param {string} id - Profile ID
+   * @returns {Promise<Object|null>} Profile or null
+   */
+  async loadVoiceProfile(id) {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('voiceProfiles', 'readonly');
+      const store = tx.objectStore('voiceProfiles');
+
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * List all voice profiles
+   * 
+   * @returns {Promise<Array>} Array of profiles
+   */
+  async listVoiceProfiles() {
+    if (!this.db) {
+      throw new Error('IndexedDB not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('voiceProfiles', 'readonly');
+      const store = tx.objectStore('voiceProfiles');
+
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }

@@ -104,7 +104,7 @@ function getLSPLinter() {
  * 
  * @param {object} options - Options
  * @param {string} options.lspServerUrl - LSP server URL
- * @returns {LanguageSupport} Language support
+ * @returns {LanguageSupport|Array} Language support or extensions array
  */
 export function canvaslLanguage(options = {}) {
   const { lspServerUrl } = options;
@@ -117,6 +117,12 @@ export function canvaslLanguage(options = {}) {
   // Start with markdown language support
   const markdownSupport = markdown();
   
+  // For now, return just markdown support to avoid extension conflicts
+  // LSP features can be added later once the base setup works
+  return markdownSupport;
+  
+  // TODO: Re-enable LSP extensions once extension conflict is resolved
+  /*
   // Add LSP-based extensions
   const extensions = [
     // LSP autocomplete
@@ -132,10 +138,12 @@ export function canvaslLanguage(options = {}) {
     lintKeymap
   ];
   
+  // Return LanguageSupport with combined extensions
   return new LanguageSupport(
     markdownSupport.language,
     [...markdownSupport.support, ...extensions]
   );
+  */
 }
 
 /**

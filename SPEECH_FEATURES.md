@@ -421,14 +421,14 @@ Potential improvements:
 - [x] Voice command templates ✅ **COMPLETE**
 - [ ] Custom wake word ("Hey CANVASL")
 - [ ] Multi-language support
-- [ ] Speech-to-text export
-- [ ] Voice profile customization
 - [ ] Confidence threshold tuning
 - [ ] Command history navigation
-- [ ] Voice macros/shortcuts
+- [ ] Speech-to-text export
 - [ ] Template library (save/load templates)
 - [ ] Template editing via voice
+- [ ] Voice macros/shortcuts
 - [ ] Direct file upload for MD parsing
+- [ ] Voice profile customization
 
 ## Technical Notes
 
