@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: canvasl-app
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    environment:
+      - VITE_TURN_SERVER_URL=${VITE_TURN_SERVER_URL:-turn:coturn:3478}
+      - VITE_TURN_USERNAME=${VITE_TURN_USERNAME:-}
+      - VITE_TURN_PASSWORD=${VITE_TURN_PASSWORD:-}
+    depends_on:
+      - coturn
+    networks:
+      - canvasl-network
+    restart: unless-stopped
+
+  coturn:
+    image: coturn/coturn:latest
+    container_name: canvasl-coturn
+    ports:
+      - "${COTURN_PORT:-3478}:3478/udp"
+      - "${COTURN_PORT:-3478}:3478/tcp"
+      - "49152-65535:49152-65535/udp"
+    volumes:
+      - ./coturn.conf:/etc/coturn/turnserver.conf:ro
+    environment:
+      - COTURN_REALM=${COTURN_REALM:-canvasl.local}
+      - COTURN_USER=${COTURN_USER:-canvasl}
+      - COTURN_PASS=${COTURN_PASS:-}
+    entrypoint: |
+      sh -c "
+      if [ -n \"$$COTURN_USER\" ] && [ -n \"$$COTURN_PASS\" ]; then
+        turnserver -n --log-file=stdout --config-file=/etc/coturn/turnserver.conf --user=$$COTURN_USER:$$COTURN_PASS --realm=$$COTURN_REALM
+      else
+        turnserver -n --log-file=stdout --config-file=/etc/coturn/turnserver.conf
+      fi
+      "
+    networks:
+      - canvasl-network
+    restart: unless-stopped
+
+networks:
+  canvasl-network:
+    driver: bridge
+

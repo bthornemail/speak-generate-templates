@@ -31,6 +31,7 @@
     "codemirror": "^6.0.2",
     "hnswlib-wasm": "^0.8.2",
     "js-yaml": "^4.1.0",
+    "orga": "^4.5.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.6",

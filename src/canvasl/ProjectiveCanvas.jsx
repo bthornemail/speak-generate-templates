@@ -13,8 +13,15 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { AnimationEngine } from './canvas/animation-engine.js';
 import { iconLoader } from './icons/icon-loader.js';
 import AffineSVGComposer from '../components/AffineSVGComposer.jsx';
+import { ViewportManager } from './canvas/viewport-manager.js';
+import { screenToVirtual, virtualToScreen, fitToNodes } from './canvas/infinite-canvas-utils.js';
+import { cullNodes, getInfiniteViewport } from './canvas/viewport-culler.js';
+import { WebRTCCollaboration } from './sync/webrtc-collaboration.js';
+import { PresenceManager } from './sync/presence-manager.js';
+import { OperationalTransform } from './sync/operational-transform.js';
+import { DragDropHandler } from './canvas/drag-drop-handler.js';
 
-export default function ProjectiveCanvas({ dag, complex, onNodeSelect, onNodeCreate }) {
+export default function ProjectiveCanvas({ dag, complex, onNodeSelect, onNodeCreate, blackboard = null, filterDimension = null, viewType = 'default' }) {
   const canvasRef = useRef(null);
   const animationEngineRef = useRef(null);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -29,30 +36,176 @@ export default function ProjectiveCanvas({ dag, complex, onNodeSelect, onNodeCre
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [useOffscreenCanvas, setUseOffscreenCanvas] = useState(false);
+  const [useInfiniteCanvas, setUseInfiniteCanvas] = useState(true);
+  const workerRef = useRef(null);
+  const viewportManagerRef = useRef(null);
+  const collaborationRef = useRef(null);
+  const presenceManagerRef = useRef(null);
+  const otRef = useRef(null);
+  const dragDropRef = useRef(null);
+  const [collaborationStatus, setCollaborationStatus] = useState('disconnected');
+  const [peerCount, setPeerCount] = useState(0);
+  const [remotePresences, setRemotePresences] = useState([]);
 
-  // Canvas dimensions
-  const canvasWidth = 1200;
-  const canvasHeight = 800;
+  // Canvas dimensions (for infinite canvas, these are virtual bounds)
+  const canvasWidth = useInfiniteCanvas ? Infinity : 1200;
+  const canvasHeight = useInfiniteCanvas ? Infinity : 800;
 
-  // Convert DAG nodes to positions
+  // Initialize viewport manager for infinite canvas
+  useEffect(() => {
+    if (useInfiniteCanvas && !viewportManagerRef.current) {
+      viewportManagerRef.current = new ViewportManager({
+        viewOffset: { x: 0, y: 0 },
+        zoom: 1,
+        screenWidth: canvasSize.width || 800,
+        screenHeight: canvasSize.height || 600
+      });
+      
+      // Listen for viewport changes
+      const unsubscribe = viewportManagerRef.current.onUpdate((state) => {
+        setViewOffset(state.viewOffset);
+        setZoom(state.zoom);
+      });
+      
+      return unsubscribe;
+    }
+  }, [useInfiniteCanvas, canvasSize]);
+
+  // Initialize WebRTC collaboration
+  useEffect(() => {
+    if (!collaborationRef.current) {
+      const collaboration = new WebRTCCollaboration({
+        localPeerId: `peer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        onNodeUpdate: (update, peerId) => {
+          // Handle node update from peer
+          if (otRef.current && dag) {
+            const operation = otRef.current.transform(update, []);
+            const newState = otRef.current.applyOperation({ nodes: dag.nodes }, operation);
+            // Update DAG with new state
+            if (onNodeSelect) {
+              onNodeSelect(update.nodeId);
+            }
+          }
+        },
+        onPresenceUpdate: (presence, peerId) => {
+          // Update presence
+          if (presenceManagerRef.current) {
+            presenceManagerRef.current.updateRemotePresence(peerId, presence);
+            setRemotePresences(presenceManagerRef.current.getAllPresences());
+          }
+        }
+      });
+
+      collaborationRef.current = collaboration;
+      
+      // Initialize collaboration
+      collaboration.initialize().then(() => {
+        setCollaborationStatus('ready');
+      }).catch((error) => {
+        console.error('Failed to initialize WebRTC:', error);
+        setCollaborationStatus('error');
+      });
+
+      // Initialize operational transform
+      otRef.current = new OperationalTransform({
+        strategy: 'last-write-wins'
+      });
+
+      // Initialize presence manager
+      presenceManagerRef.current = new PresenceManager({
+        localPeerId: collaboration.localPeerId
+      });
+      presenceManagerRef.current.start();
+
+      return () => {
+        collaboration.disconnect();
+        presenceManagerRef.current?.stop();
+      };
+    }
+  }, []);
+
+  // Initialize drag-and-drop handler
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas && !dragDropRef.current) {
+      dragDropRef.current = new DragDropHandler({
+        canvas: canvas,
+        onNodeMove: ({ nodeId, position }) => {
+          // Update node position
+          if (collaborationRef.current) {
+            collaborationRef.current.sendNodeUpdate({
+              type: 'move',
+              nodeId: nodeId,
+              position: position,
+              timestamp: Date.now()
+            });
+          }
+        },
+        onNodeCreate: (nodeData) => {
+          // Create node from dragged source block
+          onNodeCreate?.(nodeData);
+          if (collaborationRef.current) {
+            collaborationRef.current.sendNodeUpdate({
+              type: 'create',
+              nodeId: nodeData.id,
+              data: nodeData,
+              timestamp: Date.now()
+            });
+          }
+        },
+        onEdgeCreate: (edgeData) => {
+          // Create edge
+          if (collaborationRef.current) {
+            collaborationRef.current.sendNodeUpdate({
+              type: 'edge-create',
+              edge: edgeData,
+              timestamp: Date.now()
+            });
+          }
+        }
+      });
+
+      return () => {
+        dragDropRef.current?.destroy();
+      };
+    }
+  }, [onNodeCreate, onNodeSelect]);
+
+  // Update collaboration status
+  useEffect(() => {
+    if (collaborationRef.current) {
+      const status = collaborationRef.current.getConnectionStatus();
+      setCollaborationStatus(status.connectionState);
+      setPeerCount(status.peerCount || 0);
+    }
+  }, [collaborationStatus, peerCount]);
+
+  // Convert DAG nodes to positions (infinite canvas support)
   const getNodePosition = useCallback((nodeId) => {
     if (!dag || !dag.nodes.has(nodeId)) {
-      return { x: canvasWidth / 2, y: canvasHeight / 2 };
+      // For infinite canvas, use origin as default
+      return useInfiniteCanvas ? { x: 0, y: 0 } : { x: (canvasWidth === Infinity ? 0 : canvasWidth / 2), y: (canvasHeight === Infinity ? 0 : canvasHeight / 2) };
     }
 
     const node = dag.nodes.get(nodeId);
     const nodes = Array.from(dag.nodes.values());
     const index = nodes.findIndex(n => n.cid === nodeId);
 
-    // Circular layout
+    // Circular layout (use screen dimensions for infinite canvas)
+    const layoutRadius = useInfiniteCanvas 
+      ? Math.min(canvasSize.width || 800, canvasSize.height || 600) * 0.35
+      : Math.min(canvasWidth === Infinity ? 800 : canvasWidth, canvasHeight === Infinity ? 600 : canvasHeight) * 0.35;
+    
     const angle = (index / nodes.length) * Math.PI * 2;
-    const radius = Math.min(canvasWidth, canvasHeight) * 0.35;
+    const centerX = useInfiniteCanvas ? 0 : (canvasWidth === Infinity ? 0 : canvasWidth / 2);
+    const centerY = useInfiniteCanvas ? 0 : (canvasHeight === Infinity ? 0 : canvasHeight / 2);
 
     return {
-      x: canvasWidth / 2 + Math.cos(angle) * radius,
-      y: canvasHeight / 2 + Math.sin(angle) * radius
+      x: centerX + Math.cos(angle) * layoutRadius,
+      y: centerY + Math.sin(angle) * layoutRadius
     };
-  }, [dag, canvasWidth, canvasHeight]);
+  }, [dag, canvasWidth, canvasHeight, useInfiniteCanvas, canvasSize]);
 
   // Memoize node positions
   const nodePositions = useMemo(() => {
@@ -161,53 +314,89 @@ export default function ProjectiveCanvas({ dag, complex, onNodeSelect, onNodeCre
     ctx.translate(offsetX, offsetY);
     ctx.scale(scale, scale);
 
-    // Draw grid
-    drawGrid(ctx, canvasWidth, canvasHeight);
+    // Draw grid (only for fixed canvas, or show grid in viewport for infinite)
+    if (!useInfiniteCanvas) {
+      drawGrid(ctx, canvasWidth, canvasHeight);
+      drawAxes(ctx, canvasWidth, canvasHeight);
+    } else {
+      // Draw grid in viewport for infinite canvas
+      drawInfiniteGrid(ctx, viewOffset, zoom, displayWidth, displayHeight);
+    }
 
-    // Draw axes
-    drawAxes(ctx, canvasWidth, canvasHeight);
+    // Filter nodes/edges by dimension if specified
+    const filteredDag = filterDimension !== null && dag ? filterDagByDimension(dag, filterDimension) : dag;
 
     // Draw edges
-    if (dag && dag.nodes.size > 0) {
-      drawEdges(ctx, dag, nodePositions, hoveredNode, selectedNode);
+    if (filteredDag && filteredDag.nodes.size > 0) {
+      drawEdges(ctx, filteredDag, nodePositions, hoveredNode, selectedNode);
     }
 
     // Draw nodes
-    if (dag && dag.nodes.size > 0) {
-      drawNodes(ctx, dag, nodePositions, nodeIcons, hoveredNode, selectedNode, animationEngineRef.current);
+    if (filteredDag && filteredDag.nodes.size > 0) {
+      drawNodes(ctx, filteredDag, nodePositions, nodeIcons, hoveredNode, selectedNode, animationEngineRef.current);
     }
 
     ctx.restore();
 
     // Draw title (in screen coordinates)
+    const titleText = filterDimension !== null 
+      ? `${filterDimension}D View` 
+      : viewType === 'projective' 
+        ? 'Projective Plane ℙ²' 
+        : viewType === 'affine'
+          ? 'Affine Plane'
+          : 'Projective Plane ℙ²';
+    
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.font = 'bold 20px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('Projective Plane ℙ²', 20, 30);
+    ctx.fillText(titleText, 20, 30);
+
+    // Draw dimension-specific content
+    if (filterDimension !== null && complex) {
+      drawDimensionContent(ctx, complex, filterDimension, displayWidth, displayHeight);
+    }
 
     // Draw node count (in screen coordinates)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.font = '12px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(`Nodes: ${dag?.nodes.size || 0}`, 20, displayHeight - 20);
-  }, [dag, nodePositions, nodeIcons, hoveredNode, selectedNode, viewOffset, zoom, canvasWidth, canvasHeight, canvasSize]);
+    ctx.fillText(`Nodes: ${filteredDag?.nodes.size || 0}`, 20, displayHeight - 20);
+  }, [dag, nodePositions, nodeIcons, hoveredNode, selectedNode, viewOffset, zoom, canvasWidth, canvasHeight, canvasSize, filterDimension, viewType, complex]);
 
-  // Update canvas size based on viewport
+  // Update canvas size based on parent container
+  const containerRef = useRef(null);
+  
   useEffect(() => {
     const updateCanvasSize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      setCanvasSize({ width, height });
+      const container = containerRef.current?.parentElement;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const width = rect.width || window.innerWidth;
+        const height = rect.height || window.innerHeight;
+        setCanvasSize({ width, height });
+      } else {
+        // Fallback to viewport
+        setCanvasSize({ width: window.innerWidth, height: window.innerHeight });
+      }
     };
 
     // Initial size
     updateCanvasSize();
 
     // Handle window resize
+    const resizeObserver = new ResizeObserver(updateCanvasSize);
+    if (containerRef.current?.parentElement) {
+      resizeObserver.observe(containerRef.current.parentElement);
+    }
+    
     window.addEventListener('resize', updateCanvasSize);
-    return () => window.removeEventListener('resize', updateCanvasSize);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateCanvasSize);
+    };
   }, []);
 
   // Initial render and render loop
@@ -435,36 +624,101 @@ export default function ProjectiveCanvas({ dag, complex, onNodeSelect, onNodeCre
   }, [dag, nodePositions, currentHistoryItem]);
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: `${canvasSize.width}px`, height: `${canvasSize.height}px`, background: 'transparent', overflow: 'hidden', margin: 0, padding: 0 }}>
+    <div 
+      ref={containerRef}
+      style={{ 
+        position: 'relative', 
+        width: '100%', 
+        height: '100%',
+        minHeight: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: 'transparent'
+      }}
+    >
       {/* Main Projective Canvas (Canvas) */}
-      <div style={{ width: `${canvasSize.width}px`, height: `${canvasSize.height}px`, position: 'fixed', top: 0, left: 0, overflow: 'hidden', zIndex: 0, margin: 0, padding: 0 }}>
+      <div style={{ 
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        overflow: 'hidden', 
+        zIndex: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
         <canvas
           ref={canvasRef}
           style={{
             display: 'block',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: `${canvasSize.width}px`,
-            height: `${canvasSize.height}px`,
+            width: canvasSize.width > 0 ? `${canvasSize.width}px` : '100%',
+            height: canvasSize.height > 0 ? `${canvasSize.height}px` : '100%',
+            maxWidth: '100%',
+            maxHeight: '100%',
+            objectFit: 'contain',
             background: 'transparent',
             cursor: hoveredNode ? 'pointer' : 'crosshair',
             zIndex: 0,
             pointerEvents: 'auto',
-            margin: 0,
-            padding: 0
+            margin: '0 auto'
           }}
           onClick={handleCanvasClick}
           onDoubleClick={handleDoubleClick}
           onMouseMove={handleMouseMove}
+          onWheel={handleWheel}
         />
 
-        {/* Minimap of Affine View (top-right) */}
+        {/* Collaboration Status (top-right) */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'rgba(20, 20, 20, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '8px',
+            padding: '10px 15px',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            minWidth: '200px'
+          }}
+        >
+          <div style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}>
+            Collaboration
+          </div>
+          <div style={{ 
+            color: collaborationStatus === 'connected' ? '#4caf50' : 
+                   collaborationStatus === 'ready' ? '#ff9800' : '#999',
+            fontSize: '11px'
+          }}>
+            {collaborationStatus === 'connected' ? '🟢 Connected' :
+             collaborationStatus === 'ready' ? '🟡 Ready' :
+             collaborationStatus === 'error' ? '🔴 Error' :
+             '⚪ Disconnected'}
+          </div>
+          {peerCount > 0 && (
+            <div style={{ color: '#ccc', fontSize: '10px' }}>
+              {peerCount} peer{peerCount !== 1 ? 's' : ''}
+            </div>
+          )}
+          {remotePresences.length > 0 && (
+            <div style={{ color: '#ccc', fontSize: '10px', marginTop: '5px' }}>
+              {remotePresences.length} active user{remotePresences.length !== 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
+
+        {/* Minimap of Affine View (below collaboration status) */}
         {showMinimap && (
           <div
             style={{
               position: 'absolute',
-              top: '20px',
+              top: '100px',
               right: '20px',
               width: '200px',
               height: '150px',
@@ -752,6 +1006,61 @@ function drawGrid(ctx, width, height) {
   }
 }
 
+/**
+ * Draw infinite grid (for infinite canvas)
+ */
+function drawInfiniteGrid(ctx, viewOffset, zoom, screenWidth, screenHeight) {
+  const gridSize = 50; // Grid cell size in virtual coordinates
+  const scaledGridSize = gridSize * zoom;
+  
+  // Calculate visible grid bounds
+  const startX = Math.floor(-viewOffset.x / scaledGridSize) * scaledGridSize;
+  const endX = startX + screenWidth + scaledGridSize * 2;
+  const startY = Math.floor(-viewOffset.y / scaledGridSize) * scaledGridSize;
+  const endY = startY + screenHeight + scaledGridSize * 2;
+  
+  ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+  ctx.lineWidth = 1 / zoom;
+  
+  // Draw vertical lines
+  for (let x = startX; x <= endX; x += scaledGridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, startY);
+    ctx.lineTo(x, endY);
+    ctx.stroke();
+  }
+  
+  // Draw horizontal lines
+  for (let y = startY; y <= endY; y += scaledGridSize) {
+    ctx.beginPath();
+    ctx.moveTo(startX, y);
+    ctx.lineTo(endX, y);
+    ctx.stroke();
+  }
+  
+  // Draw axes (origin lines)
+  ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
+  ctx.lineWidth = 2 / zoom;
+  
+  // Vertical axis (x = 0)
+  const axisX = -viewOffset.x;
+  if (axisX >= 0 && axisX <= screenWidth) {
+    ctx.beginPath();
+    ctx.moveTo(axisX, startY);
+    ctx.lineTo(axisX, endY);
+    ctx.stroke();
+  }
+  
+  // Horizontal axis (y = 0)
+  const axisY = -viewOffset.y;
+  if (axisY >= 0 && axisY <= screenHeight) {
+    ctx.beginPath();
+    ctx.moveTo(startX, axisY);
+    ctx.lineTo(endX, axisY);
+    ctx.stroke();
+  }
+}
+
 function drawAxes(ctx, width, height) {
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
   ctx.lineWidth = 2;
@@ -767,6 +1076,122 @@ function drawAxes(ctx, width, height) {
   ctx.moveTo(0, height / 2);
   ctx.lineTo(width, height / 2);
   ctx.stroke();
+}
+
+// Filter DAG by dimension
+function filterDagByDimension(dag, dimension) {
+  if (!dag || dimension === null) return dag;
+  
+  const filtered = {
+    nodes: new Map(),
+    roots: new Set(),
+    heads: new Set()
+  };
+  
+  // Filter nodes based on dimension
+  // Check node.meta.dimension or infer from chain complex
+  dag.nodes.forEach((node, nodeId) => {
+    const nodeDim = node.meta?.dimension ?? null;
+    // If dimension matches or is null, include the node
+    if (nodeDim === dimension || nodeDim === null) {
+      filtered.nodes.set(nodeId, node);
+      if (dag.roots.has(nodeId)) filtered.roots.add(nodeId);
+      if (dag.heads.has(nodeId)) filtered.heads.add(nodeId);
+    }
+  });
+  
+  return filtered;
+}
+
+// Draw dimension-specific content
+function drawDimensionContent(ctx, complex, dimension, width, height) {
+  if (!complex) return;
+  
+  ctx.save();
+  ctx.fillStyle = 'rgba(100, 108, 255, 0.3)';
+  ctx.font = 'bold 16px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  const dimData = {
+    0: { cells: complex.C0, label: '0D: Vertices (Points)' },
+    1: { cells: complex.C1, label: '1D: Edges (Lines)' },
+    2: { cells: complex.C2, label: '2D: Faces (Surfaces)' },
+    3: { cells: complex.C3, label: '3D: Volumes (Solids)' },
+    4: { cells: complex.C4, label: '4D: Contexts (Hypervolumes)' }
+  };
+  
+  const dimInfo = dimData[dimension];
+  if (dimInfo) {
+    ctx.fillStyle = 'rgba(100, 108, 255, 0.8)';
+    ctx.fillText(dimInfo.label, width / 2, 60);
+    ctx.fillStyle = 'rgba(100, 108, 255, 0.6)';
+    ctx.font = '14px monospace';
+    ctx.fillText(`Cells: ${dimInfo.cells.length}`, width / 2, 85);
+    
+    // Draw dimension-specific visualization
+    drawDimensionVisualization(ctx, dimInfo.cells, dimension, width, height);
+  }
+  
+  ctx.restore();
+}
+
+// Draw dimension-specific visualization
+function drawDimensionVisualization(ctx, cells, dimension, width, height) {
+  if (cells.length === 0) return;
+  
+  ctx.save();
+  ctx.strokeStyle = `rgba(100, 108, 255, ${0.3 + dimension * 0.1})`;
+  ctx.lineWidth = 2 + dimension;
+  
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) * 0.25;
+  
+  cells.forEach((cell, index) => {
+    const angle = (index / Math.max(cells.length, 1)) * Math.PI * 2;
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius;
+    
+    // Draw cell representation based on dimension
+    switch (dimension) {
+      case 0:
+        // Points
+        ctx.fillStyle = 'rgba(100, 108, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 1:
+        // Lines
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        break;
+      case 2: {
+        // Triangles
+        const nextAngle = ((index + 1) % cells.length) / Math.max(cells.length, 1) * Math.PI * 2;
+        const nextX = centerX + Math.cos(nextAngle) * radius;
+        const nextY = centerY + Math.sin(nextAngle) * radius;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.lineTo(nextX, nextY);
+        ctx.closePath();
+        ctx.stroke();
+        break;
+      }
+      default:
+        // Higher dimensions: draw as circles
+        ctx.fillStyle = `rgba(100, 108, 255, ${0.4 + dimension * 0.1})`;
+        ctx.beginPath();
+        ctx.arc(x, y, 8 + dimension * 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+  });
+  
+  ctx.restore();
 }
 
 function drawEdges(ctx, dag, nodePositions, hoveredNode, selectedNode) {

@@ -138,7 +138,7 @@ export class WASMMLEngine {
   async loadEmbeddingModel() {
     // Try to load from IndexedDB cache
     try {
-      const cached = await tf.io.loadModel('indexeddb://automaton-embedding-model');
+      const cached = await tf.loadLayersModel('indexeddb://automaton-embedding-model');
       console.log('[WASM ML] Loaded cached model from IndexedDB');
       return cached;
     } catch (error) {

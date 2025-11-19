@@ -13,11 +13,14 @@ import { HomologyValidator, computeAllBetti } from './chain/homology.js';
 import { computeCID } from './crypto/cid.js';
 import { registerWebAuthn } from './crypto/webauthn.js';
 import { createDAG, addNode as addDagNode } from './dag/operations.js';
+import { MLMetaLogBlackboard } from './ml/ml-metrolog-blackboard.js';
+import { parseOrgDocument } from './org-mode/org-parser.js';
+import { projectAllSourceBlocks } from './org-mode/source-block-projector.js';
 import SpeechInterface from './SpeechInterface.jsx';
 import ProjectiveCanvas from './ProjectiveCanvas.jsx';
 import AgenticChatDashboard from '../components/AgenticChatDashboard.jsx';
 
-export default function CANVASL() {
+export default function CANVASL({ filterDimension = null, viewType = 'default' }) {
   const { nodeId } = useParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('Initializing...');
@@ -33,6 +36,9 @@ export default function CANVASL() {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [forceUpdate, setForceUpdate] = useState(0);
   const [showAffineEditor, setShowAffineEditor] = useState(false);
+  const [blackboard, setBlackboard] = useState(null);
+  const [orgContent, setOrgContent] = useState('');
+  const [orgAST, setOrgAST] = useState(null);
 
   // Initialize CANVASL system
   useEffect(() => {
@@ -67,6 +73,17 @@ export default function CANVASL() {
         setStatus('Loading existing nodes...');
         const recentNodes = await idbStore.getRecentNodes(5);
         setNodes(recentNodes);
+
+        setStatus('Initializing MetaLog blackboard...');
+        const metaLogBlackboard = new MLMetaLogBlackboard({
+          metaLog: {
+            indexedDBName: 'canvasl-meta-log',
+            enableProlog: true,
+            enableDatalog: true
+          }
+        });
+        await metaLogBlackboard.initialize();
+        setBlackboard(metaLogBlackboard);
 
         setStatus('Ready ✓');
       } catch (error) {
@@ -236,8 +253,12 @@ export default function CANVASL() {
   // Load node from URL if nodeId param exists
   useEffect(() => {
     if (nodeId && dag && dag.nodes.has(nodeId)) {
-      setSelectedNodeId(nodeId);
-      setStatus(`Loaded node from URL: ${nodeId.slice(0, 20)}...`);
+      // Use setTimeout to avoid synchronous setState in effect
+      const timer = setTimeout(() => {
+        setSelectedNodeId(nodeId);
+        setStatus(`Loaded node from URL: ${nodeId.slice(0, 20)}...`);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [nodeId, dag]);
 
@@ -247,12 +268,76 @@ export default function CANVASL() {
     createNode();
   };
 
-  // Get viewport size for consistent sizing
+  // Handle Org Mode content processing
+  const handleOrgContentProcess = async (content) => {
+    if (!blackboard) {
+      console.warn('Blackboard not initialized');
+      return;
+    }
+
+    try {
+      setStatus('Parsing Org Mode document...');
+      const ast = parseOrgDocument(content);
+      setOrgAST(ast);
+      setOrgContent(content);
+
+      setStatus('Projecting source blocks to Canvas...');
+      // Project source blocks to canvas via blackboard
+      const canvasAPI = {
+        addNode: async (nodeData) => {
+          // Add node to DAG
+          if (dag) {
+            const node = {
+              parent: 'genesis',
+              cid: nodeData.id || await computeCID(nodeData),
+              auth: '',
+              path: `m/44'/60'/0'/0/${Date.now()}`,
+              sig: '',
+              uri: `canvasl://local/${Date.now()}`,
+              topo: { type: 'Topology', objects: {}, arcs: [] },
+              geo: { type: 'FeatureCollection', features: [] },
+              meta: {
+                size: 0,
+                mimeType: 'application/json',
+                ...nodeData.metadata
+              }
+            };
+            await opfs?.writeNode(node.cid, node);
+            await idb?.indexNode(node, Date.now());
+            addDagNode(dag, node);
+            setDag({ ...dag });
+          }
+        },
+        updateNode: async (nodeId, updates) => {
+          // Update node in DAG
+          if (dag && dag.nodes.has(nodeId)) {
+            const node = dag.nodes.get(nodeId);
+            Object.assign(node, updates);
+            await opfs?.writeNode(node.cid, node);
+            await idb?.indexNode(node, Date.now());
+            setDag({ ...dag });
+          }
+        }
+      };
+
+      const results = await projectAllSourceBlocks(ast, canvasAPI);
+      setStatus(`✅ Projected ${results.length} source blocks to Canvas`);
+    } catch (error) {
+      console.error('Failed to process Org Mode content:', error);
+      setStatus(`Error processing Org Mode: ${error.message}`);
+    }
+  };
+
+  // Get viewport size and mobile state
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const updateSize = () => {
-      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setViewportSize({ width, height });
+      setIsMobile(width < 768);
     };
     updateSize();
     window.addEventListener('resize', updateSize);
@@ -262,60 +347,156 @@ export default function CANVASL() {
   return (
     <div style={{ 
       fontFamily: 'monospace', 
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: viewportSize.width > 0 ? `${viewportSize.width}px` : '100vw',
-      height: viewportSize.height > 0 ? `${viewportSize.height}px` : '100vh',
-      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      width: '100%',
+      background: 'transparent',
       margin: 0,
-      padding: 0,
-      background: 'transparent'
+      padding: 0
     }}>
-      {/* Projective Canvas - Full Screen */}
-      <div style={{
-        position: 'fixed',
+      {/* Header - HTML */}
+      <header style={{
+        position: 'sticky',
         top: 0,
-        left: 0,
-        width: viewportSize.width > 0 ? `${viewportSize.width}px` : '100vw',
-        height: viewportSize.height > 0 ? `${viewportSize.height}px` : '100vh',
-        zIndex: 0,
-        margin: 0,
-        padding: 0
-      }}>
-        <ProjectiveCanvas
-          dag={dag}
-          complex={complex}
-          onNodeSelect={handleNodeSelect}
-          onNodeCreate={handleNodeCreateFromCanvas}
-          key={forceUpdate}
-        />
-      </div>
-
-      {/* Overlay Panel (top-left) */}
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        zIndex: 100,
+        zIndex: 1000,
         background: 'rgba(20, 20, 20, 0.95)',
-        borderRadius: '8px',
-        padding: '20px',
-        maxWidth: '400px',
         backdropFilter: 'blur(10px)',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: isMobile ? '10px 15px' : '15px 20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px'
       }}>
-      <h1 style={{ color: '#fff', textShadow: '0 0 10px rgba(100, 108, 255, 0.5)', marginBottom: '10px' }}>CANVASL A₁₁</h1>
-      <p style={{ color: '#e0e0e0', fontSize: '16px', marginBottom: '20px' }}>
-        Peer-to-Peer, Topologically Sound, Self-Sovereign Operating System
-      </p>
+        <div>
+          <h1 style={{ 
+            color: '#fff', 
+            margin: 0, 
+            fontSize: isMobile ? 'clamp(18px, 5vw, 24px)' : '24px',
+            textShadow: '0 0 10px rgba(100, 108, 255, 0.5)'
+          }}>
+            CANVASL A₁₁
+            {filterDimension !== null && ` - ${filterDimension}D`}
+            {viewType === 'projective' && ' - Projective'}
+            {viewType === 'affine' && ' - Affine'}
+          </h1>
+          {!isMobile && (
+            <p style={{ color: '#e0e0e0', margin: '5px 0 0 0', fontSize: '14px' }}>
+              Peer-to-Peer, Topologically Sound, Self-Sovereign OS
+            </p>
+          )}
+        </div>
+        <div style={{ 
+          display: 'flex', 
+          gap: isMobile ? '5px' : '15px', 
+          flexWrap: 'wrap',
+          fontSize: isMobile ? '11px' : '12px',
+          alignItems: 'center'
+        }}>
+          <div style={{ color: '#e0e0e0' }}>
+            <strong style={{ color: '#fff' }}>Status:</strong> {status}
+          </div>
+          {dag && (
+            <div style={{ color: '#e0e0e0' }}>
+              <strong style={{ color: '#fff' }}>Nodes:</strong> {dag.nodes.size}
+            </div>
+          )}
+        </div>
+      </header>
 
-      <div style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-        <strong style={{ color: '#fff' }}>Status:</strong> <span style={{ color: '#e0e0e0' }}>{status}</span>
-      </div>
+      {/* Main Content Area - Canvas Centered */}
+      <main style={{
+        flex: 1,
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: 0,
+        width: '100%',
+        overflow: 'hidden',
+        background: 'transparent'
+      }}>
+        {/* Canvas Container */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 0
+        }}>
+          <ProjectiveCanvas
+            dag={dag}
+            complex={complex}
+            onNodeSelect={handleNodeSelect}
+            onNodeCreate={handleNodeCreateFromCanvas}
+            blackboard={blackboard}
+            key={forceUpdate}
+            filterDimension={filterDimension}
+            viewType={viewType}
+          />
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+        {/* Navigation Links - Dimensional Views */}
+        {!isMobile && (
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            zIndex: 100,
+            background: 'rgba(20, 20, 20, 0.95)',
+            borderRadius: '8px',
+            padding: '10px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '5px',
+            fontSize: '12px',
+            minWidth: '120px'
+          }}>
+            <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '5px', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '5px' }}>Views:</div>
+            <a href="/projective" style={{ color: viewType === 'projective' ? '#64b5f6' : '#999', textDecoration: 'none', padding: '2px 0' }}>Projective</a>
+            <a href="/affine" style={{ color: viewType === 'affine' ? '#64b5f6' : '#999', textDecoration: 'none', padding: '2px 0' }}>Affine</a>
+            <div style={{ marginTop: '5px', color: '#999', fontSize: '10px', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '5px' }}>Dimensions:</div>
+            {[0, 1, 2, 3, 4].map(dim => (
+              <a 
+                key={dim} 
+                href={`/${dim}D`} 
+                style={{ 
+                  color: filterDimension === dim ? '#64b5f6' : '#999', 
+                  textDecoration: 'none', 
+                  padding: '2px 0',
+                  fontWeight: filterDimension === dim ? 'bold' : 'normal'
+                }}
+                onClick={(e) => { e.preventDefault(); navigate(`/${dim}D`); }}
+              >
+                {dim}D
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Overlay Panel (top-left) - Hidden on mobile */}
+        {!isMobile && (
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            left: viewType === 'affine' ? '10px' : '150px',
+            zIndex: 100,
+            maxWidth: 'min(400px, calc(100vw - 40px))',
+            background: 'rgba(20, 20, 20, 0.95)',
+            borderRadius: '8px',
+            padding: '15px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
         <div>
           <h3 style={{ color: '#fff', marginBottom: '10px' }}>Chain Complex</h3>
           {complex && (
@@ -395,32 +576,52 @@ export default function CANVASL() {
           )}
         </div>
       </div>
-      </div>
+          </div>
+        )}
 
-      {/* Speech Interface (bottom overlay) */}
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 100,
-        width: '90%',
-        maxWidth: '800px'
+        {/* Agentic Chat Dashboard (bottom-right) - Hidden on mobile */}
+        {!isMobile && (
+          <div style={{ 
+            position: 'absolute',
+            bottom: '20px',
+            right: '20px',
+            zIndex: 100
+          }}>
+            <AgenticChatDashboard 
+              dag={dag} 
+              complex={complex}
+              onAgentCommand={(command) => {
+                console.log('[CANVASL] Agent command:', command);
+                // Handle agent commands here
+              }}
+            />
+          </div>
+        )}
+      </main>
+
+      {/* Footer - HTML with Voice Interface */}
+      <footer style={{
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 1000,
+        background: 'rgba(20, 20, 20, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: isMobile ? '10px' : '15px',
+        width: '100%'
       }}>
-        <SpeechInterface onCommand={handleCommand} complex={complex} dag={dag} />
-      </div>
-
-      {/* Agentic Chat Dashboard (bottom-right) */}
-      <div style={{ zIndex: 100 }}>
-        <AgenticChatDashboard 
-          dag={dag} 
-          complex={complex}
-          onAgentCommand={(command) => {
-            console.log('[CANVASL] Agent command:', command);
-            // Handle agent commands here
-          }}
-        />
-      </div>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          width: '100%'
+        }}>
+          <SpeechInterface 
+            onCommand={handleCommand} 
+            complex={complex} 
+            dag={dag} 
+          />
+        </div>
+      </footer>
     </div>
   );
 }

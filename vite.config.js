@@ -36,6 +36,20 @@ export default defineConfig({
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true
+    },
+    rollupOptions: {
+      external: (id) => {
+        // Externalize meta-log-db as optional dependency
+        if (id === 'meta-log-db/browser' || id.startsWith('meta-log-db/')) {
+          return true;
+        }
+        return false;
+      },
+      output: {
+        globals: {
+          'meta-log-db/browser': 'MetaLogDb'
+        }
+      }
     }
   }
 })
