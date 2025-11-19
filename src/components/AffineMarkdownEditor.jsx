@@ -10,6 +10,9 @@ import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { parseMdFrontmatter, parseAndValidate } from '../canvasl/speech/frontmatter-parser.js';
 import { canvaslLanguage } from '../canvasl/lsp/canvasl-language.js';
+import { orgModeLanguage, orgModeAutocomplete } from '../canvasl/lsp/org-mode-language.js';
+import { orgModeAutocompleteExtension } from '../canvasl/lsp/org-mode-autocomplete.js';
+import { parseOrgDocument } from '../canvasl/org-mode/org-parser.js';
 import './AffineMarkdownEditor.css';
 
 export default function AffineMarkdownEditor({ 
@@ -17,12 +20,14 @@ export default function AffineMarkdownEditor({
   onSave, 
   onParse,
   planeName = 'Affine View',
-  nodeId = null 
+  nodeId = null,
+  fileType = 'markdown' // 'markdown' | 'org-mode'
 }) {
   const [content, setContent] = useState(initialContent);
   const [parsedData, setParsedData] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [validationStatus, setValidationStatus] = useState(null);
+  const [orgAST, setOrgAST] = useState(null);
 
   // Update content when initialContent changes
   useEffect(() => {
@@ -72,7 +77,7 @@ export default function AffineMarkdownEditor({
     return () => {
       cancelled = true;
     };
-  }, [content, onParse]);
+  }, [content, onParse, fileType]);
 
   const handleSave = () => {
     onSave?.(content);
@@ -229,7 +234,14 @@ Say keywords to trigger macros: "location", "notify"
           <CodeMirror
             value={content}
             height="500px"
-            extensions={[canvaslLanguage({ lspServerUrl: 'ws://localhost:3000/lsp' })]}
+            extensions={fileType === 'org-mode' 
+              ? [
+                  orgModeLanguage(),
+                  orgModeAutocompleteExtension(orgAST),
+                  orgModeAutocomplete()
+                ]
+              : [canvaslLanguage({ lspServerUrl: 'ws://localhost:3000/lsp' })]
+            }
             theme={oneDark}
             onChange={(value) => setContent(value)}
             basicSetup={{

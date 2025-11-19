@@ -16,13 +16,23 @@ async function loadMetaLogDb() {
   
   try {
     // Try to import from meta-log-db package
-    const metaLogModule = await import('meta-log-db/browser').catch(() => null);
-    if (metaLogModule) {
+    // Use dynamic import with error handling for optional dependency
+    let metaLogModule = null;
+    try {
+      // Check if module exists before importing
+      metaLogModule = await import('meta-log-db/browser');
+    } catch (importError) {
+      // Module not available - this is OK, we'll use fallback
+      console.warn('[Meta-Log] meta-log-db package not available, using fallback mode');
+      return;
+    }
+    
+    if (metaLogModule && metaLogModule.MetaLogDbBrowser) {
       MetaLogDbBrowser = metaLogModule.MetaLogDbBrowser;
       BrowserConfig = metaLogModule.BrowserConfig;
     }
   } catch (error) {
-    console.warn('[Meta-Log] Could not import meta-log-db, using fallback');
+    console.warn('[Meta-Log] Could not import meta-log-db, using fallback:', error.message);
   }
 }
 

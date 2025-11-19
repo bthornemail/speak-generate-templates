@@ -15,6 +15,14 @@ if ('registerProtocolHandler' in navigator && (window.location.protocol === 'htt
       'CANVASL Protocol Handler'
     );
     console.log('✅ Registered canvasl:// protocol handler');
+    
+    // Register org:// protocol handler for Org Mode documents (optional)
+    navigator.registerProtocolHandler(
+      'web+org',
+      `${window.location.origin}/org/%s`,
+      'Org Mode Protocol Handler'
+    );
+    console.log('✅ Registered org:// protocol handler');
   } catch (error) {
     console.warn('⚠️ Protocol handler registration failed:', error);
   }
@@ -47,12 +55,38 @@ function handleProtocolURL() {
       console.warn('⚠️ Failed to handle protocol URL:', error);
     }
   }
+  
+  // Handle org:// protocol URLs for Org Mode documents
+  if (protocol === 'web+org:' || (href.startsWith('org://') && protocol !== 'http:' && protocol !== 'https:')) {
+    try {
+      // Replace protocol for URL parsing
+      const urlString = href.replace(/^(web\+org|org):/, 'http:');
+      const url = new URL(urlString);
+      const path = url.pathname;
+      
+      // Extract document path or ID
+      const docPath = path.split('/').filter(p => p).pop();
+      
+      // Redirect to canvas with org document parameter
+      if (docPath && docPath !== '') {
+        window.location.replace(`${window.location.origin}/canvas?org=${encodeURIComponent(docPath)}`);
+      } else {
+        window.location.replace(`${window.location.origin}/canvas`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to handle org:// protocol URL:', error);
+    }
+  }
 }
 
 // Only handle protocol URLs on page load if we're actually on a protocol URL
 // This check ensures we don't interfere with normal HTTP/HTTPS navigation
 const isProtocolURL = window.location.protocol === 'web+canvasl:' || 
+                     window.location.protocol === 'web+org:' ||
                      (window.location.href.startsWith('canvasl://') && 
+                      window.location.protocol !== 'http:' && 
+                      window.location.protocol !== 'https:') ||
+                     (window.location.href.startsWith('org://') && 
                       window.location.protocol !== 'http:' && 
                       window.location.protocol !== 'https:');
 
